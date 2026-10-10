@@ -13,6 +13,18 @@ from decodo_proxy import open_via_decodo
 
 URL = "https://sede.gva.es/es/cercador-ocupacio-publica"
 
+BASE_URL = URL
+PROBE_PARAMS = {
+    "pruebas": "507",
+    "turnos": "L",
+    "tipoOrganismo": "flexRadioDefault200",
+    "fechaPublicacionDesde": "2025-10-10",
+    "fechaPublicacionHasta": "2026-10-10",
+    "fechaPublicacionBoletinDesde": "2025-10-10",
+    "fechaPublicacionBoletinHasta": "2026-10-10",
+    "tamanyoPagina": "30",
+}
+
 
 class FormInspector(HTMLParser):
     def __init__(self):
@@ -91,6 +103,29 @@ def main():
         print(f"HTTP_STATUS={response.status}")
         print(f"FINAL_URL={response.geturl()}")
         print(f"CONTENT_TYPE={response.headers.get('Content-Type', '')}")
+
+    # Consultas de prueba de solo lectura: primero filtros base y luego fechas.
+    from urllib.parse import urlencode
+    probes = [
+        ("BASE_FILTERS", PROBE_PARAMS),
+        ("BASE_NO_PROP_DATES", {k:v for k,v in PROBE_PARAMS.items() if not k.startswith("fechaPublicacionBoletin")}),
+        ("BASE_NO_DATES", {k:v for k,v in PROBE_PARAMS.items() if not k.startswith("fechaPublicacion")}),
+    ]
+    for label, params in probes:
+        probe_url = URL + "?" + urlencode(params)
+        try:
+            with open_via_decodo(probe_url, timeout=45) as probe_response:
+                probe_body = probe_response.read()
+                probe_charset = probe_response.headers.get_content_charset() or "utf-8"
+                probe_html = probe_body.decode(probe_charset, errors="replace")
+                print(f"PROBE_{label}_STATUS={probe_response.status}")
+                print(f"PROBE_{label}_URL={probe_response.geturl()}")
+                print(f"PROBE_{label}_BYTES={len(probe_body)}")
+                print(f"PROBE_{label}_TITLE_COUNT={len(re.findall(r'<title\\b', probe_html, re.I))}")
+                print(f"PROBE_{label}_ITEM_MARKERS={sum(probe_html.lower().count(x) for x in ('convocatoria', 'proceso selectivo', 'fecha de publicación'))}")
+                print(f"PROBE_{label}_RESULTS_CONTEXT=" + re.sub(r"\\s+", " ", probe_html[probe_html.lower().find("result"):probe_html.lower().find("result")+1200])[:1200])
+        except Exception as exc:
+            print(f"PROBE_{label}_ERROR={type(exc).__name__}: {exc}")
 
     inspector = FormInspector()
     inspector.feed(html)
