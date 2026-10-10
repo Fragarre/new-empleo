@@ -132,7 +132,7 @@ def main():
                 print(f"PROBE_{label}_TOTAL_RESULTS_TEXT={total_text!r}")
                 print(f"PROBE_{label}_ITEM_MARKERS={sum(probe_html.lower().count(x) for x in ('convocatoria', 'proceso selectivo', 'fecha de publicación'))}")
                 result_pos = probe_html.lower().find('results mt-3')
-                detail_hrefs = [h for h in re.findall('href="([^"]+)"', probe_html, re.I) if 'ocupacio-publica' in h.lower() or 'ocupacio_publica' in h.lower()]
+                detail_hrefs = [h for h in re.findall(r'href=["\\']([^"\\']+)["\\']', probe_html, re.I) if re.search(r"/detall-ocupacio-publica\\?id_emp=\\d+", h, re.I)]
                 print(f"PROBE_{label}_DETAIL_HREFS_TOTAL={len(detail_hrefs)}")
                 print(f"PROBE_{label}_DETAIL_HREFS_UNIQUE={len(set(detail_hrefs))}")
                 print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
@@ -141,9 +141,9 @@ def main():
                 if label.startswith("GROUP_"):
                     unique_detail_urls = list(dict.fromkeys(urljoin(URL, href) for href in detail_hrefs))
                     print(f"DETAIL_AUDIT_CANDIDATES={len(unique_detail_urls)}")
-                    for detail_index, detail_url in enumerate(unique_detail_urls[:30], 1):
+                    for detail_index, detail_url in enumerate(unique_detail_urls[:15], 1):
                         try:
-                            with open_via_decodo(detail_url, timeout=12) as detail_response:
+                            with open_via_decodo(detail_url, timeout=8) as detail_response:
                                 detail_body = detail_response.read()
                                 detail_charset = detail_response.headers.get_content_charset() or "utf-8"
                                 detail_html = detail_body.decode(detail_charset, errors="replace")
@@ -157,9 +157,8 @@ def main():
                             stages_match = re.search(r"Listado de etapas(.{0,1800}?)(?=Preguntas frecuentes|Enlaces de interés|$)", detail_text, re.I)
                             stages_text = stages_match.group(1).strip() if stages_match else "NO_EXTRAIDO"
                             result_terms = (
-                                "lista de aprobados", "lista definitiva de aprobados",
-                                "relación de personas que han superado", "personas que han superado",
-                                "resultado final", "propuesta de nombramiento", "nombramiento",
+                                "lista definitiva de aprobados", "relación de personas que han superado",
+                                "resultado final", "propuesta de nombramiento",
                                 "adjudicación de destinos", "aprobación del expediente",
                             )
                             current_lower = current_stage.lower()
@@ -167,7 +166,7 @@ def main():
                             if current_stage == "NO_EXTRAIDA":
                                 audit_status = "REVISION_MANUAL_ETAPA_NO_EXTRAIDA"
                             elif result_hits:
-                                audit_status = "RESULTADOS_O_FASE_FINAL_PUBLICADA"
+                                audit_status = "RESULTADOS_O_POSIBLE_FASE_FINAL_REVISAR_ETAPAS"
                             else:
                                 audit_status = "SIN_INDICADOR_DE_RESULTADOS_EN_ETAPA_ACTUAL"
                             print(f"DETAIL_AUDIT_{detail_index}_URL={detail_url}")
