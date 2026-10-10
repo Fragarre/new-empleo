@@ -182,15 +182,17 @@ def main():
                 print(f"PROBE_{label}_EMPLOYMENT_IDS={employment_ids!r}")
                 # Inspección de enlaces dentro del bloque de resultados.
                 context_start = max(0, result_pos - 300) if result_pos >= 0 else 0
-                context_end = min(len(probe_html), result_pos + 30000) if result_pos >= 0 else min(len(probe_html), 30000)
+                context_end = len(probe_html) if result_pos >= 0 else min(len(probe_html), 30000)
                 results_html = probe_html[context_start:context_end]
                 links = re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', results_html, re.I | re.S)
-                print(f"PROBE_{label}_RESULT_LINK_COUNT={len(links)}")
-                for link_index, (href, link_text) in enumerate(links[:100], 1):
-                    visible_text = re.sub(r"<[^>]+>", " ", link_text)
+                target_count = 0
+                for href, link_text in links:
+                    visible_text = html_unescape(re.sub(r"<[^>]+>", " ", link_text))
                     visible_text = re.sub(r"\s+", " ", visible_text).strip()
-                    print(f"PROBE_{label}_RESULT_LINK_{link_index}={href!r} | {visible_text[:220]!r}")
-                print(f"PROBE_{label}_RESULTS_CONTEXT=" + (probe_html[max(0, result_pos-300):result_pos+4500] if result_pos >= 0 else "NOT_FOUND"))
+                    if re.search(r"A1-01|A2-01|C1-01|C2-01|administrativ[oa]|auxiliar administrativo[oa]", visible_text, re.I):
+                        print(f"PROBE_{label}_TARGET_CANDIDATE={urljoin(URL, href)} | {visible_text[:320]!r}")
+                        target_count += 1
+                print(f"PROBE_{label}_TARGET_CANDIDATES_COUNT={target_count}")
         except Exception as exc:
             print(f"PROBE_{label}_ERROR={type(exc).__name__}: {exc}")
 
