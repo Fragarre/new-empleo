@@ -113,6 +113,10 @@ def main():
 
     for control in inspector.filter_controls:
         print(f"FILTER_CONTROL={control!r}")
+    for match in re.finditer(r"<input\\b[^>]*>", html, re.IGNORECASE):
+        tag = match.group(0)
+        if any(word in tag.lower() for word in ("type-test", "flexradiodefault", "id=", "type=")):
+            print("HTML_INPUT=" + tag[:500])
     for marker in ("type-test-list", "shifts-list", "type-organism-list", "processing-status-list", "groups-list", "paginacion", "resultados", "pagination"):
         pos = html.lower().find(marker)
         print(f"HTML_MARKER_{marker}_COUNT={html.lower().count(marker)}")
