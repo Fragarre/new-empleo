@@ -491,6 +491,21 @@ def main():
         or re.search(r"(?:siguiente|next|\u203a|\u00bb)", label, re.I)
     ]
     print(f"LISTADO_ENLACES_PAGINACION={json.dumps(pagination_links[:40], ensure_ascii=False)}")
+    # Diagnóstico de controles y mensajes: la paginación puede depender de
+    # parámetros de formulario o JavaScript, no de enlaces <a>.
+    controls = re.findall(r"<(?:input|select|button)\\b[^>]{0,500}>", html, re.I)
+    controls = [
+        re.sub(r"\\s+", " ", item)[:300]
+        for item in controls
+        if re.search(r"(?:pagina|page|cur|delta|tamanyo|resultado|submit|search|buscar)", item, re.I)
+    ]
+    print(f"LISTADO_CONTROLES_PAGINACION={json.dumps(controls[:60], ensure_ascii=False)}")
+    snippets = []
+    for match in re.finditer(r"139 resultados|100 primeros|demasiados resultados|tamanyoPagina|pagina=|pagination|p_p_id|\\bcur=", html, re.I):
+        snippets.append(re.sub(r"\\s+", " ", html[max(0, match.start()-180):match.end()+220]))
+        if len(snippets) >= 25:
+            break
+    print(f"LISTADO_FRAGMENTOS_PAGINACION={json.dumps(snippets, ensure_ascii=False)}")
     print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
     if not all_items:
