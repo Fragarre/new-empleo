@@ -417,7 +417,7 @@ def main():
             first.append({"id_emp": supplemental_id, "url": f"https://sede.gva.es/es/detall-ocupacio-publica?id_emp={supplemental_id}", "link_text": "Ficha complementaria identificada en auditoría"})
     print(f"LISTADO_URL_FINAL={final_list_url}")
     print(f"LISTADO_HTML_CARACTERES={len(html)}")
-    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.I | re.S)
     list_title = clean(re.sub(r'<[^>]+>', ' ', title_match.group(1))) if title_match else ""
     print(f"LISTADO_TITULO={list_title!r}")
     if is_service_unavailable_page(html, list_title):
