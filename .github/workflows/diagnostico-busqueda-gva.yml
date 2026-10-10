@@ -16,7 +16,7 @@ permissions:
 jobs:
   diagnostico:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 8
     env:
       GVA_PROXY_URL: ${{ secrets.GVA_PROXY_URL }}
       GVA_PROXY_USER: ${{ secrets.GVA_PROXY_USER }}
