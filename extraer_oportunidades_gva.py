@@ -29,6 +29,8 @@ PARAMS = {
     "fechaPublicacionHasta": "2026-10-10",
     "tamanyoPagina": "100",
 }
+# Ficha oficial detectada previamente como ausente en el listado filtrado.
+SUPPLEMENTAL_IDS = ("110135",)
 OUT = Path("salida_gva")
 TARGET_GROUPS = ("A1-01", "A2-01", "C1-01", "C2-01")
 TERMINAL = (
@@ -205,8 +207,9 @@ def parse_detail(emp):
     if stage_labels:
         start = stage_labels[-1].end()
         tail = text[start:]
-        end_match = re.search(r"AYUDA|AJUDA|Preguntas frecuentes|Preguntes freqüents|Enlaces de interés|Enllaços d'interés", tail, re.I)
-        stages_section = clean(tail[:end_match.start()] if end_match else tail)
+        # No cortar en "AYUDA": ese enlace aparece en la navegación antes del
+        # historial real. Conservar el bloque completo y limitarlo defensivamente.
+        stages_section = clean(tail[:12000])
     application_window = ""
     application_start = ""
     application_end = ""
@@ -252,7 +255,7 @@ def parse_detail(emp):
         "etapas_completas_texto": stages_section,
         "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
-        "requiere_revision": not bool(current and places_total and stages_section),
+        "requiere_revision": not bool(current and places_total and len(stages_section) > 100),
         "error": "",
     }
 
@@ -262,6 +265,11 @@ def main():
     first_url = BASE + "?" + urlencode(PARAMS)
     html, final_list_url = fetch(first_url, timeout=25)
     first, list_text = extract_result_links(html)
+    # Añadir fichas conocidas que el buscador no incluyó pese a cumplir alcance.
+    present_ids = {x["id_emp"] for x in first}
+    for supplemental_id in SUPPLEMENTAL_IDS:
+        if supplemental_id not in present_ids:
+            first.append({"id_emp": supplemental_id, "url": f"https://sede.gva.es/es/detall-ocupacio-publica?id_emp={supplemental_id}", "link_text": "Ficha complementaria identificada en auditoría"})
     print(f"LISTADO_URL_FINAL={final_list_url}")
     print(f"LISTADO_HTML_CARACTERES={len(html)}")
     title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.I | re.S)
