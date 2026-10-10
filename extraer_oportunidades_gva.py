@@ -307,6 +307,15 @@ def parse_detail(emp):
     terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
+    en_plazo_inscripcion = None
+    if application_start and application_end:
+        try:
+            today = datetime.now().date()
+            start_date = datetime.strptime(application_start, "%d/%m/%Y").date()
+            end_date = datetime.strptime(application_end, "%d/%m/%Y").date()
+            en_plazo_inscripcion = start_date <= today <= end_date
+        except ValueError:
+            en_plazo_inscripcion = None
     return {
         **emp,
         "url_final": final_url,
@@ -324,6 +333,7 @@ def parse_detail(emp):
         "plazo_solicitud_texto": application_window,
         "plazo_solicitud_inicio": application_start,
         "plazo_solicitud_fin": application_end,
+        "en_plazo_inscripcion": en_plazo_inscripcion,
         "etapas_completas_texto": stages_section,
         "ficha_pdf_url": pdf_url,
         "ficha_completa_texto": ficha_pdf_texto,
@@ -404,8 +414,8 @@ def main():
                "administrativo_por_titulo", "candidata_por_criterios_basicos",
                "convocatoria_tipo_restringido_detectado", "etapa_actual", "plazas_totales",
                "distribucion_plazas", "fechas_detectadas", "plazo_solicitud_texto",
-               "plazo_solicitud_inicio", "plazo_solicitud_fin", "estado_provisional",
-               "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
+               "plazo_solicitud_inicio", "plazo_solicitud_fin", "en_plazo_inscripcion",
+               "estado_provisional", "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
                "ficha_pdf_url", "ficha_completa_texto", "error_pdf", "error"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
