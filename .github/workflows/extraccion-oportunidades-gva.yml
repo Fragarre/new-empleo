@@ -1,0 +1,42 @@
+name: Extracción auditable de oportunidades GVA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "extraer_oportunidades_gva.py"
+      - "decodo_proxy.py"
+      - ".github/workflows/extraccion-oportunidades-gva.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  extraer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GVA_PROXY_URL: ${{ secrets.GVA_PROXY_URL }}
+      GVA_PROXY_USER: ${{ secrets.GVA_PROXY_USER }}
+      GVA_PROXY_PASSWORD: ${{ secrets.GVA_PROXY_PASSWORD }}
+    steps:
+      - name: Obtener repositorio
+        uses: actions/checkout@v4
+      - name: Validar sintaxis
+        run: python -m py_compile extraer_oportunidades_gva.py decodo_proxy.py
+      - name: Extraer fichas oficiales
+        run: |
+          set -o pipefail
+          python -u extraer_oportunidades_gva.py 2>&1 | tee extraccion_gva.log
+      - name: Guardar resultados para revisión
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extraccion-oportunidades-gva
+          path: |
+            salida_gva/
+            extraccion_gva.log
+          if-no-files-found: warn
+          retention-days: 14
