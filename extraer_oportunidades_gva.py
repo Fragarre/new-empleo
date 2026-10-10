@@ -133,7 +133,7 @@ def extract_result_links(html):
         if "/detall-ocupacio-publica" not in href or "id_emp=" not in href:
             continue
         absolute = urljoin(BASE, href)
-        match = DETAIL_RE.search(absolute) or re.search(r"[?&]id_emp=(\\d+)", absolute, re.I)
+        match = DETAIL_RE.search(absolute) or re.search(r"[?&]id_emp=(\d+)", absolute, re.I)
         if not match:
             continue
         emp_id = match.group(1)
@@ -224,7 +224,7 @@ def main():
     first, list_text = extract_result_links(html)
     print(f"LISTADO_URL_FINAL={final_list_url}")
     print(f"LISTADO_HTML_CARACTERES={len(html)}")
-    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.I | re.S)
     print(f"LISTADO_TITULO={clean(re.sub(r'<[^>]+>', ' ', title_match.group(1))) if title_match else ''!r}")
     print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
