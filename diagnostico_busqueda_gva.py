@@ -132,7 +132,7 @@ def main():
                 print(f"PROBE_{label}_TOTAL_RESULTS_TEXT={total_text!r}")
                 print(f"PROBE_{label}_ITEM_MARKERS={sum(probe_html.lower().count(x) for x in ('convocatoria', 'proceso selectivo', 'fecha de publicación'))}")
                 result_pos = probe_html.lower().find('results mt-3')
-                detail_hrefs = [h for h in re.findall(r'href=["\\']([^"\\']+)["\\']', probe_html, re.I) if re.search(r"/detall-ocupacio-publica\\?id_emp=\\d+", h, re.I)]
+                detail_hrefs = [h for h in re.findall(r"""href=["']([^"']+)["']""", probe_html, re.I) if re.search(r"/detall-ocupacio-publica\?id_emp=\d+", h, re.I)]
                 print(f"PROBE_{label}_DETAIL_HREFS_TOTAL={len(detail_hrefs)}")
                 print(f"PROBE_{label}_DETAIL_HREFS_UNIQUE={len(set(detail_hrefs))}")
                 print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
