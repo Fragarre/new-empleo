@@ -125,7 +125,10 @@ def main():
                 print(f"PROBE_{label}_TITLE_COUNT={len(re.findall(r'<title\\b', probe_html, re.I))}")
                 print(f"PROBE_{label}_ITEM_MARKERS={sum(probe_html.lower().count(x) for x in ('convocatoria', 'proceso selectivo', 'fecha de publicación'))}")
                 result_pos = probe_html.lower().find('results mt-3')
-                print(f"PROBE_{label}_DETAIL_HREFS=" + str(probe_html.lower().count('detall-ocupacio-publica')))
+                detail_hrefs = [h for h in re.findall('href="([^"]+)"', probe_html, re.I) if 'ocupacio-publica' in h.lower() or 'ocupacio_publica' in h.lower()]
+                print(f"PROBE_{label}_DETAIL_HREFS_TOTAL={len(detail_hrefs)}")
+                print(f"PROBE_{label}_DETAIL_HREFS_UNIQUE={len(set(detail_hrefs))}")
+                print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
                 print(f"PROBE_{label}_RESULTS_CONTEXT=" + (probe_html[max(0, result_pos-300):result_pos+4500] if result_pos >= 0 else "NOT_FOUND"))
         except Exception as exc:
             print(f"PROBE_{label}_ERROR={type(exc).__name__}: {exc}")
