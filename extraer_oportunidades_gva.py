@@ -261,6 +261,7 @@ def parse_detail(emp):
     pdf_url = ""
     ficha_pdf_texto = ""
     pdf_error = ""
+    fecha_publicacion = ""
     if target:
         pdf_url, ficha_pdf_texto, pdf_error = fetch_official_pdf(emp["id_emp"])
         if ficha_pdf_texto:
@@ -283,6 +284,8 @@ def parse_detail(emp):
                     r"Publicación.*?\bde\s+(\d{2}/\d{2}/\d{4})",
                     base_tail, re.I)
                 selected_pair = None
+                if publication_match:
+                    fecha_publicacion = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date().isoformat()
                 if publication_match and date_pairs:
                     publication_date = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date()
                     nearby_pairs = []
@@ -329,6 +332,7 @@ def parse_detail(emp):
         "etapa_actual": current,
         "plazas_totales": places_total,
         "distribucion_plazas": dist,
+        "fecha_publicacion": fecha_publicacion,
         "fechas_detectadas": list(dict.fromkeys(dates)),
         "plazo_solicitud_texto": application_window,
         "plazo_solicitud_inicio": application_start,
@@ -413,7 +417,7 @@ def main():
     columns = ["id_emp", "url", "titulo", "codigo_gva", "codigo_sia", "grupo_objetivo",
                "administrativo_por_titulo", "candidata_por_criterios_basicos",
                "convocatoria_tipo_restringido_detectado", "etapa_actual", "plazas_totales",
-               "distribucion_plazas", "fechas_detectadas", "plazo_solicitud_texto",
+               "distribucion_plazas", "fecha_publicacion", "fechas_detectadas", "plazo_solicitud_texto",
                "plazo_solicitud_inicio", "plazo_solicitud_fin", "en_plazo_inscripcion",
                "estado_provisional", "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
                "ficha_pdf_url", "ficha_completa_texto", "error_pdf", "error"]
