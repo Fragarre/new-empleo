@@ -68,10 +68,6 @@ def normalize_match(value):
     return re.sub(r"\s+", " ", value).lower()
 
 
-def requires_manual_review_title(title):
-    """Marca especialidades jurídicas para revisión de alcance, sin excluirlas automáticamente."""
-    return bool(re.search(r"especialidad ciencias juridicas", normalize_match(title)))
-
 
 def classify_scope(title, body_text="", link_text=""):
     """Devuelve (incluible, motivo) aplicando los filtros expresos del proyecto."""
@@ -460,7 +456,7 @@ def parse_detail(emp):
         "error_pdf": pdf_error,
         "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
-        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end or requires_manual_review_title(title))) or not bool(current and places_total),
+        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end)) or not bool(current and places_total),
         "error": "",
     }
 
