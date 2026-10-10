@@ -32,7 +32,7 @@ PARAMS = {
     "tamanyoPagina": "100",
 }
 # Ficha oficial detectada previamente como ausente en el listado filtrado.
-SUPPLEMENTAL_IDS = ("110135",)
+SUPPLEMENTAL_IDS = ("110135", "84656")
 OUT = Path("salida_gva")
 TARGET_GROUPS = ("A1-01", "A2-01", "C1-01", "C2-01")
 TERMINAL = (
@@ -250,13 +250,16 @@ def parse_detail(emp):
     # Fecha de plazo de solicitud: el buscador puede mostrar una etapa intermedia; no se confunde con el plazo inicial.
     dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", text)
     norm = text.lower()
-    restricted = any(x in (title + " " + emp.get("link_text", "")).lower() for x in RESTRICTED)
-    group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", title, re.I)
+    body_start = text.rfind("Detalle empleo público")
+    body_main = text[body_start:body_start + 6000] if body_start >= 0 else text[:6000]
+    classification_text = title + " " + body_main[:3000]
+    restricted = any(x in (title + " " + body_main[:1200] + " " + emp.get("link_text", "")).lower() for x in RESTRICTED)
+    group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", classification_text, re.I)
     group = group_match.group(1).upper() if group_match else ""
     administrative = bool(re.search(
         r"\b(?:cuerpo|escala|agrupación|agrupacion)\s+administrativ[oa]s?\b|"
         r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
-        title, re.I))
+        classification_text, re.I))
     target = bool(group or administrative) and not restricted
     pdf_url = ""
     ficha_pdf_texto = ""
