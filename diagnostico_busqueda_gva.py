@@ -21,9 +21,16 @@ class FormInspector(HTMLParser):
         self.scripts = []
         self._form = None
         self._select = None
+        self.filter_controls = []
+        self._classes = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        classes = attrs.get("class", "")
+        if tag in ("input", "select", "option") and any(x in classes for x in ("type-test", "shifts", "type-organism", "processing-status", "groups-list")):
+            self.filter_controls.append({"tag": tag, "id": attrs.get("id", ""), "name": attrs.get("name", ""), "value": attrs.get("value", ""), "type": attrs.get("type", ""), "class": classes})
+        if tag == "input" and (attrs.get("id", "").startswith("_es_gva_es_siac_portlet_SiacBuscadorEmpleoPublicoCiudadania360") or attrs.get("id", "") in ("fechaPublicacionDesde", "fechaPublicacionHasta", "fechaPublicacionBoletinDesde", "fechaPublicacionBoletinHasta")):
+            self.filter_controls.append({"tag": tag, "id": attrs.get("id", ""), "name": attrs.get("name", ""), "value": attrs.get("value", ""), "type": attrs.get("type", ""), "class": classes})
         if tag == "form":
             self._form = {
                 "action": attrs.get("action", ""),
@@ -103,6 +110,11 @@ def main():
                     f"name={field['name']!r} id={field['id']!r} "
                     f"value={field['value']!r}"
                 )
+
+    for control in inspector.filter_controls:
+        print(f"FILTER_CONTROL={control!r}")
+    for marker in ("cards", "paginacion", "more-results", "results-number", "resultados"):
+        print(f"HTML_MARKER_{marker}={html.lower().count(marker)}")
 
     relevant_scripts = [
         url for url in inspector.scripts
