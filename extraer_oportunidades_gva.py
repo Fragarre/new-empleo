@@ -123,7 +123,7 @@ def fetch(url, timeout=18):
     raise RuntimeError(f"No se pudo descargar {url}: {type(last).__name__}: {last}")
 
 
-def select_application_pair(publication_text, date_pairs):
+def select_application_pair(publication_text, date_pairs, preferred_pairs=None):
     """Elige el plazo inicial próximo a la publicación de las bases.
 
     La sede puede publicar la apertura 1-2 semanas después de la publicación
@@ -135,8 +135,12 @@ def select_application_pair(publication_text, date_pairs):
         publication_date = datetime.strptime(publication_text, "%d/%m/%Y").date()
     except ValueError:
         return None
+    # Si el plazo aparece junto a la etiqueta de las bases, prevalece sobre
+    # fechas similares que la sede repite en enlaces o ayudas generales.
+    preferred_pairs = list(preferred_pairs or [])
+    candidate_pool = preferred_pairs if preferred_pairs else date_pairs
     candidates = []
-    for candidate_pair in date_pairs:
+    for candidate_pair in candidate_pool:
         try:
             opening_date = datetime.strptime(candidate_pair.group(1), "%d/%m/%Y").date()
             closing_date = datetime.strptime(candidate_pair.group(2), "%d/%m/%Y").date()
@@ -308,9 +312,11 @@ def parse_detail(emp):
             base_labels = list(re.finditer(r"Bases y apertura de plazo", ficha_pdf_texto, re.I))
             if base_labels:
                 base_tail = ficha_pdf_texto[base_labels[-1].start():]
-                date_pairs = list(re.finditer(
-                    r"Apertura plazo\s+(\d{2}/\d{2}/\d{4})\s+Cierre plazo\s+(\d{2}/\d{2}/\d{4})",
-                    base_tail, re.I))
+                date_pattern = r"Apertura plazo\s+(\d{2}/\d{2}/\d{4})\s+Cierre plazo\s+(\d{2}/\d{2}/\d{4})"
+                date_pairs = list(re.finditer(date_pattern, base_tail, re.I))
+                # La ficha puede repetir plazos genéricos en el pie de página.
+                # Dar prioridad al par situado inmediatamente junto a las bases.
+                preferred_pairs = list(re.finditer(date_pattern, base_tail[:250], re.I))
                 publication_match = re.search(
                     r"Publicación.*?\bde\s+(\d{2}/\d{2}/\d{4})",
                     base_tail, re.I)
@@ -318,7 +324,7 @@ def parse_detail(emp):
                 if publication_match:
                     fecha_publicacion = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date().isoformat()
                 if publication_match and date_pairs:
-                    selected_pair = select_application_pair(publication_match.group(1), date_pairs)
+                    selected_pair = select_application_pair(publication_match.group(1), date_pairs, preferred_pairs)
                 if selected_pair:
                     application_start, application_end = selected_pair.group(1), selected_pair.group(2)
                     application_window = clean(selected_pair.group(0))
