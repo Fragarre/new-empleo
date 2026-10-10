@@ -63,6 +63,20 @@ class FormInspector(HTMLParser):
 
 
 def main():
+    # Prueba de control: distingue un fallo general del proxy de uno específico
+    # del acceso a la sede GVA. No imprime credenciales ni IP de salida.
+    for test_url, label in (
+        ("https://example.com/", "PROXY_CONTROL"),
+        (URL, "GVA_CONTROL"),
+    ):
+        try:
+            with open_via_decodo(test_url, timeout=25) as test_response:
+                print(f"{label}_STATUS={test_response.status}")
+                print(f"{label}_CONTENT_TYPE={test_response.headers.get('Content-Type', '')}")
+                test_response.read(256)
+        except Exception as exc:
+            print(f"{label}_ERROR={type(exc).__name__}: {exc}")
+
     with open_via_decodo(URL, timeout=45) as response:
         body = response.read()
         charset = response.headers.get_content_charset() or "utf-8"
