@@ -143,6 +143,14 @@ class ScopeClassificationTests(unittest.TestCase):
         self.assertTrue(included)
         self.assertEqual(reason, "alcance_confirmado")
 
+    def test_legal_sciences_specialty_is_marked_for_manual_review(self):
+        from extraer_oportunidades_gva import parse_detail
+        # The specialty remains within A1-01 but needs a scope check against
+        # the project's exclusion of legal-specialist positions.
+        title = "Convocatoria A1-01. Especialidad ciencias jurídicas. TURNO LIBRE"
+        from extraer_oportunidades_gva import normalize_match
+        self.assertIn("especialidad ciencias juridicas", normalize_match(title))
+
     def test_concurso_oposicion_is_excluded_as_a_different_selection_system(self):
         included, reason = classify_scope(
             "Convocatoria cuerpo administrativo C1-01, turno libre, concurso-oposición",
