@@ -275,12 +275,12 @@ def parse_detail(emp):
             # Si hubo modificación, usar el primer par apertura/cierre del bloque.
             base_labels = list(re.finditer(r"Bases y apertura de plazo", ficha_pdf_texto, re.I))
             if base_labels:
-                base_tail = ficha_pdf_texto[base_labels[-1].start():base_labels[-1].start() + 5000]
+                base_tail = ficha_pdf_texto[base_labels[-1].start():]
                 date_pairs = list(re.finditer(
                     r"Apertura plazo\s+(\d{2}/\d{2}/\d{4})\s+Cierre plazo\s+(\d{2}/\d{2}/\d{4})",
                     base_tail, re.I))
                 if date_pairs:
-                    pair = date_pairs[0]
+                    pair = date_pairs[-1]
                     application_start, application_end = pair.group(1), pair.group(2)
                     application_window = clean(pair.group(0))
                 else:
