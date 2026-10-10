@@ -141,7 +141,7 @@ def main():
                 if label.startswith("GROUP_"):
                     unique_detail_urls = list(dict.fromkeys(urljoin(URL, href) for href in detail_hrefs))
                     print(f"DETAIL_AUDIT_CANDIDATES={len(unique_detail_urls)}")
-                    for detail_index, detail_url in enumerate(unique_detail_urls[:15], 1):
+                    for detail_index, detail_url in enumerate(unique_detail_urls[:5], 1):
                         try:
                             with open_via_decodo(detail_url, timeout=8) as detail_response:
                                 detail_body = detail_response.read()
