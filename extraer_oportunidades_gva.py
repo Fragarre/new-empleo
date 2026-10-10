@@ -271,14 +271,26 @@ def parse_detail(emp):
                 stages_section = clean(stages_pdf_match.group(1))
             else:
                 stages_section = ficha_pdf_texto
-            application_match = re.search(
-                r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\.licituds|Termini de sol\.licitud)(.{0,700})",
-                ficha_pdf_texto, re.I)
-            if application_match:
-                application_window = clean(application_match.group(0))[:800]
-                app_dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", application_window)
-                if len(app_dates) >= 2:
-                    application_start, application_end = app_dates[0], app_dates[1]
+            # El plazo inicial suele figurar en "Bases y apertura de plazo".
+            # Si hubo modificación, usar el primer par apertura/cierre del bloque.
+            base_labels = list(re.finditer(r"Bases y apertura de plazo", ficha_pdf_texto, re.I))
+            if base_labels:
+                base_tail = ficha_pdf_texto[base_labels[-1].start():base_labels[-1].start() + 5000]
+                date_pairs = list(re.finditer(
+                    r"Apertura plazo\s+(\d{2}/\d{2}/\d{4})\s+Cierre plazo\s+(\d{2}/\d{2}/\d{4})",
+                    base_tail, re.I))
+                if date_pairs:
+                    pair = date_pairs[0]
+                    application_start, application_end = pair.group(1), pair.group(2)
+                    application_window = clean(pair.group(0))
+                else:
+                    term_match = re.search(
+                        r"Plazo Especificación del plazo(.{0,700}?)(?=Forma de presentación|Formularios y documentación|$)",
+                        base_tail, re.I)
+                    if term_match:
+                        application_window = clean(term_match.group(0))[:800]
+                    else:
+                        application_window = clean(base_tail[:800])
     terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
