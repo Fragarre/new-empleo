@@ -15,7 +15,8 @@ URL = "https://sede.gva.es/es/cercador-ocupacio-publica"
 
 BASE_URL = URL
 PROBE_PARAMS = {
-    "pruebas": "507",
+    "pruebas": "533",
+    "convocatorias": "507",
     "turnos": "L",
     "tipoOrganismo": "flexRadioDefault200",
     "fechaPublicacionDesde": "2025-10-10",
