@@ -335,6 +335,10 @@ def parse_detail(emp):
         title = record_title
     else:
         title = body_title or title
+    ficha_sin_titulo = title.strip().lower() in ("navegación", "navegacio", "navigation", "")
+    if ficha_sin_titulo:
+        # No convertir una respuesta parcial del portal en una convocatoria válida.
+        title = ""
     gva_code = ""
     m = re.search(r"(?:Código|Codi) GVA\s*(\d+)", text, re.I)
     if m:
@@ -366,6 +370,13 @@ def parse_detail(emp):
         # No cortar en "AYUDA": ese enlace aparece en la navegación antes del
         # historial real. Conservar el bloque completo y limitarlo defensivamente.
         stages_section = clean(tail[:12000])
+    if ficha_sin_titulo:
+        # Una página sin título de convocatoria se trata como fallo de extracción,
+        # aunque conserve texto de navegación o etapas residuales.
+        current = ""
+        stages_section = ""
+        places_total = ""
+        dist = {}
     application_window = ""
     application_start = ""
     application_end = ""
@@ -480,8 +491,8 @@ def parse_detail(emp):
         "error_pdf": pdf_error,
         "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
-        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end)) or not bool(current and places_total),
-        "error": "",
+        "requiere_revision": ficha_sin_titulo or bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end)) or not bool(current and places_total),
+        "error": "Ficha sin título de convocatoria identificable; posible respuesta parcial del portal" if ficha_sin_titulo else "",
     }
 
 
