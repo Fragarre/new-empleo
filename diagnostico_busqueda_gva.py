@@ -106,12 +106,14 @@ def main():
 
     # Consultas de prueba de solo lectura: primero filtros base y luego fechas.
     from urllib.parse import urlencode
+    # El buscador limita los resultados visibles a 100. Dividir por grupo
+    # evita depender de una única consulta truncada y facilita deduplicar fichas.
     probes = [
         ("BASE_FILTERS", PROBE_PARAMS),
-        ("PAGE_1", {**PROBE_PARAMS, "pagina": "1"}),
-        ("PAGE_2", {**PROBE_PARAMS, "pagina": "2"}),
-        ("PAGE_3", {**PROBE_PARAMS, "pagina": "3"}),
-        ("PAGE_4", {**PROBE_PARAMS, "pagina": "4"}),
+        ("GROUP_A1", {**PROBE_PARAMS, "grupos": "1029"}),
+        ("GROUP_A2", {**PROBE_PARAMS, "grupos": "1030"}),
+        ("GROUP_C1", {**PROBE_PARAMS, "grupos": "1032"}),
+        ("GROUP_C2", {**PROBE_PARAMS, "grupos": "1033"}),
     ]
     for label, params in probes:
         probe_url = URL + "?" + urlencode(params)
@@ -136,10 +138,10 @@ def main():
                 print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
                 # Auditar una muestra de fichas oficiales: el estado del proceso
                 # se determina por sus etapas publicadas, no por el contador.
-                if label == "BASE_FILTERS":
+                if label.startswith("GROUP_"):
                     unique_detail_urls = list(dict.fromkeys(urljoin(URL, href) for href in detail_hrefs))
                     print(f"DETAIL_AUDIT_CANDIDATES={len(unique_detail_urls)}")
-                    for detail_index, detail_url in enumerate(unique_detail_urls[:8], 1):
+                    for detail_index, detail_url in enumerate(unique_detail_urls[:30], 1):
                         try:
                             with open_via_decodo(detail_url, timeout=12) as detail_response:
                                 detail_body = detail_response.read()
