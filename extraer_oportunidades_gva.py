@@ -455,7 +455,7 @@ def main():
     rows = []
     failures = []
     # Concurrencia moderada para no sobrecargar la sede ni el proxy.
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=2) as pool:
         futures = {pool.submit(parse_detail, item): item for item in all_items.values()}
         for i, future in enumerate(as_completed(futures), 1):
             item = futures[future]
