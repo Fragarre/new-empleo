@@ -12,7 +12,7 @@ import sys
 import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from html import unescape, unescape as html_unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -524,7 +524,7 @@ def main():
     json_path = OUT / "convocatorias_gva.json"
     csv_path = OUT / "convocatorias_gva.csv"
     json_path.write_text(json.dumps({
-        "fecha_extraccion_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "fecha_extraccion_utc": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "filtros": PARAMS,
         "total_resultados_listado": len(all_items),
         "total_fichas_con_error": len(failures),
