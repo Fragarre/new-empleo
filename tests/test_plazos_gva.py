@@ -143,14 +143,13 @@ class ScopeClassificationTests(unittest.TestCase):
         self.assertTrue(included)
         self.assertEqual(reason, "alcance_confirmado")
 
-    def test_legal_sciences_specialty_is_marked_for_manual_review(self):
-        from extraer_oportunidades_gva import requires_manual_review_title
-        self.assertTrue(requires_manual_review_title(
-            "Convocatoria A1-01. Especialidad ciencias jurídicas. TURNO LIBRE"
-        ))
-        self.assertFalse(requires_manual_review_title(
-            "Convocatoria A1-01. Administración general. TURNO LIBRE"
-        ))
+    def test_legal_sciences_specialty_is_accepted(self):
+        included, reason = classify_scope(
+            "Convocatoria A1-01. Especialidad ciencias jurídicas. TURNO LIBRE",
+            "Proceso selectivo por oposición."
+        )
+        self.assertTrue(included)
+        self.assertEqual(reason, "alcance_confirmado")
 
     def test_concurso_oposicion_is_excluded_as_a_different_selection_system(self):
         included, reason = classify_scope(
