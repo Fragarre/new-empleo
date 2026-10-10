@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Ejecutar diagnóstico de solo lectura
         run: |
+          set -o pipefail
           python --version
           python diagnostico_busqueda_gva.py 2>&1 | tee diagnostico_busqueda_gva.txt
       - name: Guardar salida del diagnóstico
