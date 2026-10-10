@@ -229,7 +229,7 @@ def parse_detail(emp):
     html, final_url = fetch(emp["url"], timeout=10)
     # Validar también cada ficha individual: la sede puede devolver su página
     # de error con HTTP 200 y un título aparentemente procesable.
-    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.I | re.S)
     page_title = clean(html_unescape(re.sub(r"<[^>]+>", " ", title_match.group(1)))) if title_match else ""
     if is_service_unavailable_page(html, page_title):
         raise RuntimeError(
