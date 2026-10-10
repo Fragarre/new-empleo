@@ -135,6 +135,14 @@ class ScopeClassificationTests(unittest.TestCase):
         self.assertIn("fondos europeos", reason)
 
 
+    def test_contextual_mention_of_excluded_area_does_not_exclude_general_admin(self):
+        included, reason = classify_scope(
+            "Convocatoria cuerpo administrativo C1-01, turno libre",
+            "Proceso selectivo por oposición. La ficha enlaza información general sobre Fondos Europeos."
+        )
+        self.assertTrue(included)
+        self.assertEqual(reason, "alcance_confirmado")
+
     def test_concurso_oposicion_is_excluded_as_a_different_selection_system(self):
         included, reason = classify_scope(
             "Convocatoria cuerpo administrativo C1-01, turno libre, concurso-oposición",
