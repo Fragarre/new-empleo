@@ -482,48 +482,17 @@ def main():
             "La sede GVA devolvió una página de servicio no disponible; "
             "se aborta para evitar publicar una extracción falsa."
         )
-    nav_parser = PageParser()
-    nav_parser.feed(html)
-    pagination_links = [
-        {"href": href, "label": label}
-        for href, label in nav_parser.links
-        if re.search(r"(?:pagina|page|cur|delta|pagination|_spage|p_p_state)", href, re.I)
-        or re.search(r"(?:siguiente|next|\u203a|\u00bb)", label, re.I)
-    ]
-    print(f"LISTADO_ENLACES_PAGINACION={json.dumps(pagination_links[:40], ensure_ascii=False)}")
-    # Diagnóstico de controles y mensajes: la paginación puede depender de
-    # parámetros de formulario o JavaScript, no de enlaces <a>.
-    controls = re.findall(r"<(?:input|select|button)\\b[^>]{0,500}>", html, re.I)
-    controls = [
-        re.sub(r"\\s+", " ", item)[:300]
-        for item in controls
-        if re.search(r"(?:pagina|page|cur|delta|tamanyo|resultado|submit|search|buscar)", item, re.I)
-    ]
-    print(f"LISTADO_CONTROLES_PAGINACION={json.dumps(controls[:60], ensure_ascii=False)}")
-    snippets = []
-    for match in re.finditer(r"139 resultados|100 primeros|demasiados resultados|tamanyoPagina|pagina=|pagination|p_p_id|\\bcur=", html, re.I):
-        snippets.append(re.sub(r"\\s+", " ", html[max(0, match.start()-180):match.end()+220]))
-        if len(snippets) >= 25:
-            break
-    print(f"LISTADO_FRAGMENTOS_PAGINACION={json.dumps(snippets, ensure_ascii=False)}")
     print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
     if not all_items:
         raise RuntimeError("El buscador devolvió cero fichas; no se generará un resultado vacío. Revisar respuesta/proxy/HTML.")
-    # Comprobar siempre la paginación: el HTML puede contener menos de 100
-    # enlaces aunque el listado tenga más resultados (enlaces no reconocidos,
-    # fichas complementarias o cambios en el marcado de la sede).
-    for page in range(2, 21):
-        page_url = BASE + "?" + urlencode({**PARAMS, "pagina": str(page)})
-        page_html, _ = fetch(page_url, timeout=25)
-        if is_service_unavailable_page(page_html):
-            raise RuntimeError(f"La sede devolvió un error al consultar la página {page} del listado.")
-        items, _ = extract_result_links(page_html)
-        fresh = [x for x in items if x["id_emp"] not in all_items]
-        print(f"LISTADO_PAGINA={page} enlaces={len(items)} nuevos={len(fresh)}")
-        if not items or not fresh:
-            break
-        all_items.update({x["id_emp"]: x for x in fresh})
+    # El buscador se solicita con tamanyoPagina=100. Solo si devuelve
+    # 100 fichas hay indicios de que pueda existir una página adicional.
+    # El parámetro "pagina=2" fue probado y la sede devolvió los mismos enlaces,
+    # por lo que no se debe repetir esa consulta cuando la primera página está incompleta.
+    print(f"LISTADO_PAGINA_COMPLETA={len(first) >= 100}")
+    if len(first) >= 100:
+        print("AVISO_PAGINACION: página inicial llena; el mecanismo de página adicional requiere verificación.")
 
     print(f"RESULTADOS_UNICOS_LISTADO={len(all_items)}")
     rows = []
