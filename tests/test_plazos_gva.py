@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from extraer_oportunidades_gva import classify_scope, is_service_unavailable_page, select_application_pair
+from extraer_oportunidades_gva import classify_scope, extract_latest_stage_date, is_service_unavailable_page, select_application_pair
 
 
 PATTERN = re.compile(
@@ -59,6 +59,25 @@ class ApplicationWindowTests(unittest.TestCase):
         self.assertEqual(selected.group(1), "20/07/2026")
         self.assertEqual(selected.group(2), "31/07/2026")
 
+
+    def test_latest_stage_date_is_extracted_from_dogv_publication(self):
+        stages = (
+            "Etapa actual. Anulación acto elección destino Fase Adjudicación y nombramiento "
+            "Publicación DOGV, núm.10458, de 24/09/2026 "
+            "Acto elección de destino Publicación DOGV núm.10443 de 03/09/2026"
+        )
+        self.assertEqual(extract_latest_stage_date(stages), "24/09/2026")
+
+    def test_latest_stage_date_is_extracted_from_web_publication(self):
+        stages = (
+            "Etapa actual. Cuestionario del ejercicio Fase Oposición "
+            "Publicación Web, de 21/09/2026 Instrucciones realización examen "
+            "Publicación Web, de 15/09/2026"
+        )
+        self.assertEqual(extract_latest_stage_date(stages), "21/09/2026")
+
+    def test_missing_stage_publication_date_is_empty(self):
+        self.assertEqual(extract_latest_stage_date("Etapa actual. Nombramiento del tribunal"), "")
 
     def test_published_list_of_approved_candidates_is_terminal(self):
         from extraer_oportunidades_gva import is_terminal_stage
