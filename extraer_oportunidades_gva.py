@@ -142,7 +142,7 @@ def extract_result_links(html):
 
 
 def parse_detail(emp):
-    html, final_url = fetch(emp["url"], timeout=18)
+    html, final_url = fetch(emp["url"], timeout=10)
     p = PageParser()
     p.feed(html)
     text = p.text
@@ -188,12 +188,12 @@ def parse_detail(emp):
     # Fecha de plazo de solicitud: el buscador puede mostrar una etapa intermedia; no se confunde con el plazo inicial.
     dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", text)
     norm = text.lower()
-    restricted = any(x in norm for x in RESTRICTED)
+    restricted = any(x in (title + " " + emp.get("link_text", "")).lower() for x in RESTRICTED)
     group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", text, re.I)
     group = group_match.group(1).upper() if group_match else ""
     administrative = bool(re.search(r"administrativ[oa]|auxiliar administrativo|cuerpo superior de administración|cos superior d'administració", norm, re.I))
     target = bool(group or administrative) and not restricted
-    terminal = any(x in norm for x in TERMINAL)
+    terminal = any(x in current.lower() for x in TERMINAL)
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     return {
@@ -247,7 +247,7 @@ def main():
     rows = []
     failures = []
     # Concurrencia moderada para no sobrecargar la sede ni el proxy.
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         futures = {pool.submit(parse_detail, item): item for item in all_items.values()}
         for i, future in enumerate(as_completed(futures), 1):
             item = futures[future]
