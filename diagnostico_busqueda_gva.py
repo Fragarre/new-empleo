@@ -5,6 +5,7 @@ campos, formularios y scripts encontrados. No busca convocatorias ni escribe
 en Supabase. No presupone nombres de parámetros.
 """
 from html.parser import HTMLParser
+import gzip
 from urllib.parse import urljoin
 import re
 
@@ -99,6 +100,10 @@ def main():
         try:
             with open_via_decodo(url, timeout=45) as response:
                 script_body = response.read()
+                # El endpoint /combo de Liferay puede devolver gzip sin que
+                # urllib lo descomprima automáticamente.
+                if script_body.startswith(b"\\x1f\\x8b"):
+                    script_body = gzip.decompress(script_body)
                 charset = response.headers.get_content_charset() or "utf-8"
                 script = script_body.decode(charset, errors="replace")
                 print(f"SCRIPT_HTTP_STATUS={response.status}")
