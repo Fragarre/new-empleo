@@ -211,11 +211,11 @@ def parse_detail(emp):
     application_start = ""
     application_end = ""
     application_match = re.search(
-        r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\\.licituds|Termini de sol\\.licitud)(.{0,500})",
+        r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\.licituds|Termini de sol\.licitud)(.{0,500})",
         stages_section or text, re.I)
     if application_match:
         application_window = clean(application_match.group(0))[:600]
-        app_dates = re.findall(r"\\b(\\d{2}[/-]\\d{2}[/-]\\d{4})\\b", application_window)
+        app_dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", application_window)
         if len(app_dates) >= 2:
             application_start, application_end = app_dates[0], app_dates[1]
     # Fecha de plazo de solicitud: el buscador puede mostrar una etapa intermedia; no se confunde con el plazo inicial.
