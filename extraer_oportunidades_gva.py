@@ -5,6 +5,7 @@ Genera JSON y CSV con la ficha y el historial de etapas de cada resultado.
 from __future__ import annotations
 
 import csv
+import io
 import json
 import re
 import sys
@@ -14,6 +15,7 @@ from datetime import datetime
 from html import unescape, unescape as html_unescape
 from html.parser import HTMLParser
 from pathlib import Path
+from pypdf import PdfReader
 from urllib.parse import urlencode, urljoin, urlparse, parse_qs
 
 from decodo_proxy import open_via_decodo
@@ -119,6 +121,30 @@ def fetch(url, timeout=18):
             if attempt < 2:
                 time.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f"No se pudo descargar {url}: {type(last).__name__}: {last}")
+
+
+def fetch_official_pdf(emp_id):
+    """Descarga y extrae el PDF oficial de la ficha completa GVA."""
+    params = {
+        "_es_gva_es_siac_portlet_SiacDetalleEmpleoPublicoNuevoGVA_accion": "pdf",
+        "_es_gva_es_siac_portlet_SiacDetalleEmpleoPublicoNuevoGVA_codigo": str(emp_id),
+        "p_p_cacheability": "cacheLevelPage",
+        "p_p_id": "es_gva_es_siac_portlet_SiacDetalleEmpleoPublicoNuevoGVA",
+        "p_p_lifecycle": "2",
+        "p_p_mode": "view",
+        "p_p_state": "normal",
+    }
+    url = "https://sede.gva.es/es/detall-ocupacio-publica?" + urlencode(params)
+    try:
+        with open_via_decodo(url, timeout=12) as response:
+            data = response.read()
+        if not data.startswith(b"%PDF"):
+            return url, "", "La descarga oficial no devolvió un PDF"
+        reader = PdfReader(io.BytesIO(data))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        return url, clean(text), ""
+    except Exception as exc:
+        return url, "", f"{type(exc).__name__}: {exc}"
 
 
 def extract_result_links(html):
@@ -232,6 +258,27 @@ def parse_detail(emp):
         r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
         title, re.I))
     target = bool(group or administrative) and not restricted
+    pdf_url = ""
+    ficha_pdf_texto = ""
+    pdf_error = ""
+    if target:
+        pdf_url, ficha_pdf_texto, pdf_error = fetch_official_pdf(emp["id_emp"])
+        if ficha_pdf_texto:
+            stages_pdf_match = re.search(
+                r"(?:LISTADO DE ETAPAS|Llistat d'etapes)(.*?)(?:AYUDA|AJUDA|Preguntas frecuentes|Preguntes freqüents|Enlaces de interés|Enllaços d'interés|$)",
+                ficha_pdf_texto, re.I)
+            if stages_pdf_match:
+                stages_section = clean(stages_pdf_match.group(1))
+            else:
+                stages_section = ficha_pdf_texto
+            application_match = re.search(
+                r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\\.licituds|Termini de sol\\.licitud)(.{0,700})",
+                ficha_pdf_texto, re.I)
+            if application_match:
+                application_window = clean(application_match.group(0))[:800]
+                app_dates = re.findall(r"\\b(\\d{2}[/-]\\d{2}[/-]\\d{4})\\b", application_window)
+                if len(app_dates) >= 2:
+                    application_start, application_end = app_dates[0], app_dates[1]
     terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
@@ -253,9 +300,12 @@ def parse_detail(emp):
         "plazo_solicitud_inicio": application_start,
         "plazo_solicitud_fin": application_end,
         "etapas_completas_texto": stages_section,
+        "ficha_pdf_url": pdf_url,
+        "ficha_completa_texto": ficha_pdf_texto,
+        "error_pdf": pdf_error,
         "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
-        "requiere_revision": not bool(current and places_total and len(stages_section) > 100),
+        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end)) or not bool(current and places_total),
         "error": "",
     }
 
@@ -330,7 +380,8 @@ def main():
                "convocatoria_tipo_restringido_detectado", "etapa_actual", "plazas_totales",
                "distribucion_plazas", "fechas_detectadas", "plazo_solicitud_texto",
                "plazo_solicitud_inicio", "plazo_solicitud_fin", "estado_provisional",
-               "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto", "error"]
+               "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
+               "ficha_pdf_url", "ficha_completa_texto", "error_pdf", "error"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
         writer.writeheader()
