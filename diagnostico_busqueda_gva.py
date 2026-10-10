@@ -5,6 +5,7 @@ campos, formularios y scripts encontrados. No busca convocatorias ni escribe
 en Supabase. No presupone nombres de parámetros.
 """
 from html.parser import HTMLParser
+from html import unescape as html_unescape
 import gzip
 from urllib.parse import urljoin
 import re
@@ -133,6 +134,35 @@ def main():
                 print(f"PROBE_{label}_DETAIL_HREFS_TOTAL={len(detail_hrefs)}")
                 print(f"PROBE_{label}_DETAIL_HREFS_UNIQUE={len(set(detail_hrefs))}")
                 print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
+                # Auditar una muestra de fichas oficiales: el estado del proceso
+                # se determina por sus etapas publicadas, no por el contador.
+                if label == "BASE_FILTERS":
+                    unique_detail_urls = list(dict.fromkeys(urljoin(URL, href) for href in detail_hrefs))
+                    print(f"DETAIL_AUDIT_CANDIDATES={len(unique_detail_urls)}")
+                    for detail_index, detail_url in enumerate(unique_detail_urls[:8], 1):
+                        try:
+                            with open_via_decodo(detail_url, timeout=12) as detail_response:
+                                detail_body = detail_response.read()
+                                detail_charset = detail_response.headers.get_content_charset() or "utf-8"
+                                detail_html = detail_body.decode(detail_charset, errors="replace")
+                            detail_html = re.sub(r"<(script|style)\\b[^>]*>.*?</\\1>", " ", detail_html, flags=re.I | re.S)
+                            detail_text = html_unescape(re.sub(r"<[^>]+>", " ", detail_html))
+                            detail_text = re.sub(r"\\s+", " ", detail_text).strip()
+                            title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", detail_html, re.I | re.S)
+                            detail_title = html_unescape(re.sub(r"<[^>]+>", " ", title_match.group(1))).strip() if title_match else ""
+                            stage_match = re.search(r"Etapa actual\\s*:?\\s*(.{1,180}?)(?=\\s+(?:Código SIA|Código GVA|Información básica|Listado de etapas|Fase)\\b)", detail_text, re.I)
+                            current_stage = stage_match.group(1).strip() if stage_match else "NO_EXTRAIDA"
+                            stages_match = re.search(r"Listado de etapas(.{0,1800}?)(?=Preguntas frecuentes|Enlaces de interés|$)", detail_text, re.I)
+                            stages_text = stages_match.group(1).strip() if stages_match else "NO_EXTRAIDO"
+                            result_terms = ("lista de aprobados", "personas aprobadas", "resultado del ejercicio", "resultados del ejercicio", "calificaciones", "nota final", "propuesta de nombramiento", "nombramiento")
+                            result_hits = [term for term in result_terms if term in stages_text.lower()]
+                            print(f"DETAIL_AUDIT_{detail_index}_URL={detail_url}")
+                            print(f"DETAIL_AUDIT_{detail_index}_TITLE={detail_title[:260]!r}")
+                            print(f"DETAIL_AUDIT_{detail_index}_CURRENT_STAGE={current_stage!r}")
+                            print(f"DETAIL_AUDIT_{detail_index}_RESULT_INDICATORS={result_hits!r}")
+                            print(f"DETAIL_AUDIT_{detail_index}_STAGES={stages_text[:1000]!r}")
+                        except Exception as detail_exc:
+                            print(f"DETAIL_AUDIT_{detail_index}_ERROR={type(detail_exc).__name__}: {detail_exc}")
                 employment_ids = list(dict.fromkeys(re.findall(r'id_emp=(\d+)', probe_html, re.I)))
                 print(f"PROBE_{label}_EMPLOYMENT_IDS_COUNT={len(employment_ids)}")
                 print(f"PROBE_{label}_EMPLOYMENT_IDS={employment_ids!r}")
