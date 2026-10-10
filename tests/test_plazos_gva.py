@@ -91,6 +91,19 @@ class ApplicationWindowTests(unittest.TestCase):
         from extraer_oportunidades_gva import is_terminal_stage
         self.assertTrue(is_terminal_stage("Lista de aprobados"))
 
+    def test_annulled_destination_does_not_reactivate_call_with_final_results(self):
+        from extraer_oportunidades_gva import has_final_result_before_destination
+        stages = (
+            "Etapa actual. Anulación acto elección destino "
+            "Lista definitiva de aprobados. Plazo de presentación de documentos"
+        )
+        self.assertTrue(has_final_result_before_destination("Anulación acto elección destino", stages))
+
+    def test_destination_annulment_without_final_results_remains_in_followup(self):
+        from extraer_oportunidades_gva import has_final_result_before_destination
+        stages = "Etapa actual. Anulación acto elección destino Acto elección de destino"
+        self.assertFalse(has_final_result_before_destination("Anulación acto elección destino", stages))
+
     def test_annulled_intermediate_act_does_not_end_the_whole_call(self):
         from extraer_oportunidades_gva import is_terminal_stage
         self.assertFalse(is_terminal_stage("Anulación acto elección destino"))
