@@ -113,10 +113,19 @@ def main():
 
     for control in inspector.filter_controls:
         print(f"FILTER_CONTROL={control!r}")
+    # Relacionar cada checkbox/radio con el texto visible de su etiqueta.
     for match in re.finditer(r"<input\b[^>]*>", html, re.IGNORECASE):
         tag = match.group(0)
-        if any(word in tag.lower() for word in ("type-test", "flexradiodefault", "id=", "type=")):
-            print("HTML_INPUT=" + tag[:500])
+        typ = re.search(r'type=["\'](checkbox|radio)["\']', tag, re.IGNORECASE)
+        ident = re.search(r'\bid=["\']?([^"\'\s>]+)', tag, re.IGNORECASE)
+        if not typ or not ident:
+            continue
+        input_id = ident.group(1)
+        tail = html[match.end():match.end()+900]
+        label_match = re.search(r"<label\b[^>]*>.*?</label>", tail, re.IGNORECASE | re.DOTALL)
+        label = re.sub(r"<[^>]+>", " ", label_match.group(0)) if label_match else ""
+        label = re.sub(r"\s+", " ", label).strip()
+        print(f"FILTER_OPTION id={input_id!r} type={typ.group(1)!r} label={label[:180]!r}")
     for marker in ("type-test-list", "shifts-list", "type-organism-list", "processing-status-list", "groups-list", "paginacion", "resultados", "pagination"):
         pos = html.lower().find(marker)
         print(f"HTML_MARKER_{marker}_COUNT={html.lower().count(marker)}")
