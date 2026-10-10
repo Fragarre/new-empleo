@@ -219,6 +219,25 @@ def extract_latest_stage_date(stages_section):
     return match.group(1) if match else ""
 
 
+def has_final_result_before_destination(current, stages_section):
+    """Un acto de destino anulado no reactiva una selección con resultado final publicado."""
+    current_normalized = normalize_match(current)
+    history_normalized = normalize_match(stages_section)
+    is_destination_stage = any(
+        term in current_normalized
+        for term in ("eleccion destino", "adjudicacion de destinos", "adjudicacion y nombramiento")
+    )
+    has_final_result = any(
+        term in history_normalized
+        for term in (
+            "lista definitiva de aprobados",
+            "relacion definitiva de personas que han superado las pruebas selectivas",
+            "relacion definitiva de personas que han superado el proceso selectivo",
+        )
+    )
+    return is_destination_stage and has_final_result
+
+
 def is_terminal_stage(current):
     current_normalized = (current or "").lower()
     stage_annuls_only_an_act = "anulación acto" in current_normalized or "anulacion acto" in current_normalized
@@ -452,7 +471,7 @@ def parse_detail(emp):
                     else:
                         application_window = clean(base_tail[:800])
     fecha_ultima_etapa = extract_latest_stage_date(stages_section)
-    terminal = is_terminal_stage(current)
+    terminal = is_terminal_stage(current) or has_final_result_before_destination(current, stages_section)
     # Si ya hay un resultado publicado, la oportunidad deja de ser activa según el criterio del proyecto.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     en_plazo_inscripcion = None
