@@ -103,6 +103,9 @@ def main():
                 script = script_body.decode(charset, errors="replace")
                 print(f"SCRIPT_HTTP_STATUS={response.status}")
                 print(f"SCRIPT_LENGTH={len(script)}")
+            print("SCRIPT_SOURCE_BEGIN")
+            print(script)
+            print("SCRIPT_SOURCE_END")
             terms = (
                 "fechaPublicacionDesde", "fechaPublicacionHasta",
                 "fechaPublicacionBoletinDesde", "fechaPublicacionBoletinHasta",
