@@ -123,14 +123,19 @@ def extract_result_links(html):
     parser = PageParser()
     parser.feed(html)
     found = {}
-    for href, label in parser.links:
+    candidates = list(parser.links)
+    # Respaldo por regex sobre el HTML original por si Liferay altera el marcado.
+    candidates.extend((unescape(href), "") for href in re.findall(
+        "href=[\\\"']([^\\\"']*detall-ocupacio-publica[^\\\"']*id_emp=\\\\d+[^\\\"']*)[\\\"']",
+        html, re.I))
+    for href, label in candidates:
+        href = unescape(href)
         if "/detall-ocupacio-publica" not in href or "id_emp=" not in href:
             continue
         absolute = urljoin(BASE, href)
-        match = DETAIL_RE.search(absolute)
+        match = DETAIL_RE.search(absolute) or re.search(r"[?&]id_emp=(\\d+)", absolute, re.I)
         if not match:
             continue
-        # Canonicalizar la ficha y conservar id_emp como identificador estable.
         emp_id = match.group(1)
         found[emp_id] = {"id_emp": emp_id, "url": f"https://sede.gva.es/es/detall-ocupacio-publica?id_emp={emp_id}", "link_text": label}
     return list(found.values()), parser.text
@@ -214,17 +219,22 @@ def parse_detail(emp):
 
 def main():
     OUT.mkdir(exist_ok=True)
-    query_params = {**PARAMS, "pagina": "1"}
-    first_url = BASE + "?" + urlencode(query_params)
-    html, _ = fetch(first_url, timeout=25)
+    first_url = BASE + "?" + urlencode(PARAMS)
+    html, final_list_url = fetch(first_url, timeout=25)
     first, list_text = extract_result_links(html)
+    print(f"LISTADO_URL_FINAL={final_list_url}")
+    print(f"LISTADO_HTML_CARACTERES={len(html)}")
+    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    print(f"LISTADO_TITULO={clean(re.sub(r'<[^>]+>', ' ', title_match.group(1))) if title_match else ''!r}")
+    print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
-
-    # Prueba páginas siguientes explícitamente hasta una página sin fichas nuevas.
-    # Límite defensivo; una página vacía termina el recorrido.
+    if not all_items:
+        raise RuntimeError("El buscador devolvió cero fichas; no se generará un resultado vacío. Revisar respuesta/proxy/HTML.")
+    # Solo consultar más páginas si se alcanza el límite de 100 resultados.
     for page in range(2, 21):
-        page_params = {**PARAMS, "pagina": str(page)}
-        page_url = BASE + "?" + urlencode(page_params)
+        if len(all_items) < 100:
+            break
+        page_url = BASE + "?" + urlencode({**PARAMS, "pagina": str(page)})
         page_html, _ = fetch(page_url, timeout=25)
         items, _ = extract_result_links(page_html)
         fresh = [x for x in items if x["id_emp"] not in all_items]
