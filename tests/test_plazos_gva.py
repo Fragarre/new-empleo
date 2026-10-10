@@ -1,5 +1,6 @@
 import re
 import unittest
+from datetime import date
 
 from extraer_oportunidades_gva import classify_scope, extract_latest_stage_date, is_service_unavailable_page, select_application_pair
 
@@ -11,6 +12,13 @@ PATTERN = re.compile(
 
 
 class ApplicationWindowTests(unittest.TestCase):
+    def test_gva_date_window_moves_with_the_current_local_date(self):
+        from extraer_oportunidades_gva import gva_date_window
+        self.assertEqual(
+            gva_date_window(date(2026, 10, 11)),
+            {"fechaPublicacionDesde": "2025-10-11", "fechaPublicacionHasta": "2026-10-11"},
+        )
+
     def test_gva_service_outage_page_is_detected(self):
         html = "<html><head><title>Aplicación fuera de servicio</title></head><body>Error</body></html>"
         self.assertTrue(is_service_unavailable_page(html, "Aplicación fuera de servicio"))
