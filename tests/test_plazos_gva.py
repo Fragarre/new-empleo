@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from extraer_oportunidades_gva import select_application_pair
+from extraer_oportunidades_gva import is_service_unavailable_page, select_application_pair
 
 
 PATTERN = re.compile(
@@ -11,6 +11,14 @@ PATTERN = re.compile(
 
 
 class ApplicationWindowTests(unittest.TestCase):
+    def test_gva_service_outage_page_is_detected(self):
+        html = "<html><head><title>Aplicación fuera de servicio</title></head><body>Error</body></html>"
+        self.assertTrue(is_service_unavailable_page(html, "Aplicación fuera de servicio"))
+
+    def test_normal_listing_is_not_marked_as_service_outage(self):
+        html = "<html><head><title>Buscador de empleo público</title></head><body>Resultados</body></html>"
+        self.assertFalse(is_service_unavailable_page(html, "Buscador de empleo público"))
+
     def test_valid_initial_window_opening_12_days_after_publication_is_selected(self):
         pairs = list(PATTERN.finditer(
             "Apertura plazo 20/07/2026 Cierre plazo 31/07/2026"
