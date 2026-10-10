@@ -19,6 +19,23 @@ class ApplicationWindowTests(unittest.TestCase):
         html = "<html><head><title>Buscador de empleo público</title></head><body>Resultados</body></html>"
         self.assertFalse(is_service_unavailable_page(html, "Buscador de empleo público"))
 
+    def test_individual_detail_outage_raises_instead_of_becoming_a_record(self):
+        from unittest.mock import patch
+        from extraer_oportunidades_gva import parse_detail
+
+        html = (
+            "<html><head><title>Aplicación fuera de servicio</title></head>"
+            "<body><h1>Aplicación fuera de servicio</h1></body></html>"
+        )
+        item = {
+            "id_emp": "110071",
+            "url": "https://sede.gva.es/es/detall-ocupacio-publica?id_emp=110071",
+            "link_text": "",
+        }
+        with patch("extraer_oportunidades_gva.fetch", return_value=(html, item["url"])):
+            with self.assertRaisesRegex(RuntimeError, "ficha individual 110071.*servicio no disponible"):
+                parse_detail(item)
+
     def test_valid_initial_window_opening_12_days_after_publication_is_selected(self):
         pairs = list(PATTERN.finditer(
             "Apertura plazo 20/07/2026 Cierre plazo 31/07/2026"
