@@ -32,6 +32,8 @@ jobs:
         run: pip install pypdf
       - name: Validar sintaxis
         run: python -m py_compile extraer_oportunidades_gva.py decodo_proxy.py
+      - name: Pruebas de regresión de plazos
+        run: python -m unittest discover -s tests -v
       - name: Extraer fichas oficiales
         run: |
           set -o pipefail
