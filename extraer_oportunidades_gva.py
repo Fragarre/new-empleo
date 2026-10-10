@@ -455,7 +455,7 @@ def parse_detail(emp):
         "error_pdf": pdf_error,
         "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
-        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end)) or not bool(current and places_total),
+        "requiere_revision": bool(target and (not ficha_pdf_texto or not stages_section or not application_start or not application_end or re.search(r"especialidad ciencias juridicas", normalize_match(title)))) or not bool(current and places_total),
         "error": "",
     }
 
