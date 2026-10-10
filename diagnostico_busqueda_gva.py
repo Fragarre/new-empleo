@@ -6,6 +6,7 @@ en Supabase. No presupone nombres de parámetros.
 """
 from html.parser import HTMLParser
 from urllib.parse import urljoin
+import re
 
 from decodo_proxy import open_via_decodo
 
@@ -95,6 +96,30 @@ def main():
     print(f"RELEVANT_SCRIPT_COUNT={len(relevant_scripts)}")
     for url in relevant_scripts:
         print(f"SCRIPT_URL={url}")
+        try:
+            with open_via_decodo(url, timeout=45) as response:
+                script_body = response.read()
+                charset = response.headers.get_content_charset() or "utf-8"
+                script = script_body.decode(charset, errors="replace")
+                print(f"SCRIPT_HTTP_STATUS={response.status}")
+                print(f"SCRIPT_LENGTH={len(script)}")
+            terms = (
+                "fechaPublicacionDesde", "fechaPublicacionHasta",
+                "fechaPublicacionBoletinDesde", "fechaPublicacionBoletinHasta",
+                "fechaPublicacion", "organismo", "turno", "sistemaSelectivo",
+                "tipoPrueba", "tamanyoPagina", "pagina", "event_siguiente",
+                "procesarUrl", "plazos", "descripcion", "cuerpo"
+            )
+            for term in terms:
+                matches = list(re.finditer(re.escape(term), script, re.IGNORECASE))
+                if matches:
+                    print(f"JS_TERM={term} COUNT={len(matches)}")
+                    for match in matches[:3]:
+                        start = max(0, match.start() - 220)
+                        end = min(len(script), match.end() + 320)
+                        print("JS_CONTEXT=" + re.sub(r"\\s+", " ", script[start:end]))
+        except Exception as exc:
+            print(f"SCRIPT_FETCH_ERROR={type(exc).__name__}: {exc}")
 
 
 if __name__ == "__main__":
