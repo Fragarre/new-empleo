@@ -34,6 +34,19 @@ class ApplicationWindowTests(unittest.TestCase):
         self.assertEqual(selected.group(1), "20/07/2026")
         self.assertEqual(selected.group(2), "31/07/2026")
 
+
+    def test_published_list_of_approved_candidates_is_terminal(self):
+        from extraer_oportunidades_gva import is_terminal_stage
+        self.assertTrue(is_terminal_stage("Lista de aprobados"))
+
+    def test_annulled_intermediate_act_does_not_end_the_whole_call(self):
+        from extraer_oportunidades_gva import is_terminal_stage
+        self.assertFalse(is_terminal_stage("Anulación acto elección destino"))
+
+    def test_tribunal_appointment_is_not_terminal(self):
+        from extraer_oportunidades_gva import is_terminal_stage
+        self.assertFalse(is_terminal_stage("Nombramiento del tribunal"))
+
     def test_window_more_than_30_days_after_publication_is_not_guessed(self):
         pairs = list(PATTERN.finditer(
             "Apertura plazo 25/08/2026 Cierre plazo 14/09/2026"
