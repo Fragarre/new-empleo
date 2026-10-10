@@ -102,7 +102,7 @@ def main():
                 script_body = response.read()
                 # El endpoint /combo de Liferay puede devolver gzip sin que
                 # urllib lo descomprima automáticamente.
-                if script_body.startswith(b"\\x1f\\x8b"):
+                if script_body.startswith(b"\x1f\x8b"):
                     script_body = gzip.decompress(script_body)
                 charset = response.headers.get_content_charset() or "utf-8"
                 script = script_body.decode(charset, errors="replace")
