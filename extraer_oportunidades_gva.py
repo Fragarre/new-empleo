@@ -279,10 +279,23 @@ def parse_detail(emp):
                 date_pairs = list(re.finditer(
                     r"Apertura plazo\s+(\d{2}/\d{2}/\d{4})\s+Cierre plazo\s+(\d{2}/\d{2}/\d{4})",
                     base_tail, re.I))
-                if date_pairs:
-                    pair = date_pairs[-1]
-                    application_start, application_end = pair.group(1), pair.group(2)
-                    application_window = clean(pair.group(0))
+                publication_match = re.search(
+                    r"Publicación.*?\bde\s+(\d{2}/\d{2}/\d{4})",
+                    base_tail, re.I)
+                selected_pair = None
+                if publication_match and date_pairs:
+                    publication_date = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date()
+                    nearby_pairs = []
+                    for candidate_pair in date_pairs:
+                        opening_date = datetime.strptime(candidate_pair.group(1), "%d/%m/%Y").date()
+                        day_gap = (opening_date - publication_date).days
+                        if 0 <= day_gap <= 7:
+                            nearby_pairs.append((abs(day_gap - 1), candidate_pair))
+                    if nearby_pairs:
+                        selected_pair = min(nearby_pairs, key=lambda item: item[0])[1]
+                if selected_pair:
+                    application_start, application_end = selected_pair.group(1), selected_pair.group(2)
+                    application_window = clean(selected_pair.group(0))
                 else:
                     term_match = re.search(
                         r"Plazo Especificación del plazo(.{0,700}?)(?=Forma de presentación|Formularios y documentación|$)",
