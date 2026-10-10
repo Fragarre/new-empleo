@@ -64,7 +64,7 @@ RESTRICTED = (
 def normalize_match(value):
     value = unicodedata.normalize("NFKD", value or "")
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    return re.sub(r"\\s+", " ", value).lower()
+    return re.sub(r"\s+", " ", value).lower()
 
 
 def classify_scope(title, body_text="", link_text=""):
@@ -73,16 +73,16 @@ def classify_scope(title, body_text="", link_text=""):
     restricted_term = next((term for term in RESTRICTED if term in combined), None)
     if restricted_term:
         return False, f"exclusion_explicita:{restricted_term}"
-    has_target_group = bool(re.search(r"\\b(?:A1-01|A2-01|C1-01|C2-01)\\b", combined, re.I))
+    has_target_group = bool(re.search(r"\b(?:A1-01|A2-01|C1-01|C2-01)\b", combined, re.I))
     has_admin_title = bool(re.search(
-        r"\\b(?:cuerpo|escala|agrupacion)\\s+administrativ[oa]s?\\b|"
-        r"\\bauxiliar(?:es)? administrativ[oa]s?\\b|\\bcuerpo administrativo\\b",
+        r"\b(?:cuerpo|escala|agrupacion)\s+administrativ[oa]s?\b|"
+        r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
         combined, re.I))
     if not (has_target_group or has_admin_title):
         return False, "fuera_de_grupos_objetivo"
-    if not re.search(r"\\b(?:turno libre|torn lliure)\\b", combined):
+    if not re.search(r"\b(?:turno libre|torn lliure)\b", combined):
         return False, "sin_evidencia_turno_libre"
-    if not re.search(r"\\b(?:oposicion|oposiciones|proceso selectivo|pruebas selectivas)\\b", combined):
+    if not re.search(r"\b(?:oposicion|oposiciones|proceso selectivo|pruebas selectivas)\b", combined):
         return False, "sin_evidencia_oposicion"
     return True, "alcance_confirmado"
 
@@ -360,11 +360,11 @@ def parse_detail(emp):
         title, body_main[:6000] + " " + ficha_pdf_texto, emp.get("link_text", "")
     )
     restricted = not in_scope
-    group_match = re.search(r"\\b(A1-01|A2-01|C1-01|C2-01)\\b", normalize_match(classification_text), re.I)
+    group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", normalize_match(classification_text), re.I)
     group = group_match.group(1).upper() if group_match else ""
     administrative = bool(re.search(
-        r"\\b(?:cuerpo|escala|agrupacion)\\s+administrativ[oa]s?\\b|"
-        r"\\bauxiliar(?:es)? administrativ[oa]s?\\b|\\bcuerpo administrativo\\b",
+        r"\b(?:cuerpo|escala|agrupacion)\s+administrativ[oa]s?\b|"
+        r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
         normalize_match(classification_text), re.I))
     target = in_scope
     pdf_url = ""
