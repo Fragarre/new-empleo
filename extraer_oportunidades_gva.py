@@ -169,7 +169,7 @@ def parse_detail(emp):
     # Preferir el título de la convocatoria visible en el cuerpo de la ficha,
     # ya que el H1 puede ser solo el rótulo genérico "Detalle empleo público".
     conv_title_match = re.search(
-        r"\\b(Convocatoria\\s+\\d+\\s*/\\s*\\d+.*?)(?=\\s+(?:Conselleria|Organismo|Organisme)\\b)",
+        r"\b(Convocatoria\s+\d+\s*/\s*\d+.*?)(?=\s+(?:Conselleria|Organismo|Organisme)\b)",
         text, re.I)
     if conv_title_match:
         title = clean(conv_title_match.group(1))
