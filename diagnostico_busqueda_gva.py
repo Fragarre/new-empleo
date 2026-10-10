@@ -129,6 +129,9 @@ def main():
                 print(f"PROBE_{label}_DETAIL_HREFS_TOTAL={len(detail_hrefs)}")
                 print(f"PROBE_{label}_DETAIL_HREFS_UNIQUE={len(set(detail_hrefs))}")
                 print(f"PROBE_{label}_DETAIL_HREFS_SAMPLE={list(dict.fromkeys(detail_hrefs))[:40]!r}")
+                employment_ids = list(dict.fromkeys(re.findall(r'id_emp=(\\d+)', probe_html, re.I)))
+                print(f"PROBE_{label}_EMPLOYMENT_IDS_COUNT={len(employment_ids)}")
+                print(f"PROBE_{label}_EMPLOYMENT_IDS={employment_ids!r}")
                 print(f"PROBE_{label}_RESULTS_CONTEXT=" + (probe_html[max(0, result_pos-300):result_pos+4500] if result_pos >= 0 else "NOT_FOUND"))
         except Exception as exc:
             print(f"PROBE_{label}_ERROR={type(exc).__name__}: {exc}")
