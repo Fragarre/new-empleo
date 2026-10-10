@@ -123,6 +123,31 @@ def fetch(url, timeout=18):
     raise RuntimeError(f"No se pudo descargar {url}: {type(last).__name__}: {last}")
 
 
+def select_application_pair(publication_text, date_pairs):
+    """Elige el plazo inicial próximo a la publicación de las bases.
+
+    La sede puede publicar la apertura 1-2 semanas después de la publicación
+    en DOGV. Limitar la búsqueda a 7 días descartaba plazos válidos.
+    """
+    if not publication_text:
+        return None
+    try:
+        publication_date = datetime.strptime(publication_text, "%d/%m/%Y").date()
+    except ValueError:
+        return None
+    candidates = []
+    for candidate_pair in date_pairs:
+        try:
+            opening_date = datetime.strptime(candidate_pair.group(1), "%d/%m/%Y").date()
+            closing_date = datetime.strptime(candidate_pair.group(2), "%d/%m/%Y").date()
+        except ValueError:
+            continue
+        day_gap = (opening_date - publication_date).days
+        if 0 <= day_gap <= 30 and closing_date >= opening_date:
+            candidates.append((abs(day_gap - 1), candidate_pair))
+    return min(candidates, key=lambda item: item[0])[1] if candidates else None
+
+
 def fetch_official_pdf(emp_id):
     """Descarga y extrae el PDF oficial de la ficha completa GVA."""
     params = {
@@ -266,6 +291,9 @@ def parse_detail(emp):
     pdf_error = ""
     fecha_publicacion = ""
     if target:
+        # No conservar fechas capturadas de etapas ajenas al plazo inicial.
+        # Solo se rellenan si se identifican en el bloque oficial de las bases.
+        application_start, application_end, application_window = "", "", ""
         pdf_url, ficha_pdf_texto, pdf_error = fetch_official_pdf(emp["id_emp"])
         if ficha_pdf_texto:
             stages_pdf_match = re.search(
@@ -290,15 +318,7 @@ def parse_detail(emp):
                 if publication_match:
                     fecha_publicacion = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date().isoformat()
                 if publication_match and date_pairs:
-                    publication_date = datetime.strptime(publication_match.group(1), "%d/%m/%Y").date()
-                    nearby_pairs = []
-                    for candidate_pair in date_pairs:
-                        opening_date = datetime.strptime(candidate_pair.group(1), "%d/%m/%Y").date()
-                        day_gap = (opening_date - publication_date).days
-                        if 0 <= day_gap <= 7:
-                            nearby_pairs.append((abs(day_gap - 1), candidate_pair))
-                    if nearby_pairs:
-                        selected_pair = min(nearby_pairs, key=lambda item: item[0])[1]
+                    selected_pair = select_application_pair(publication_match.group(1), date_pairs)
                 if selected_pair:
                     application_start, application_end = selected_pair.group(1), selected_pair.group(2)
                     application_window = clean(selected_pair.group(0))
