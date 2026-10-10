@@ -486,12 +486,14 @@ def main():
     all_items = {x["id_emp"]: x for x in first}
     if not all_items:
         raise RuntimeError("El buscador devolvió cero fichas; no se generará un resultado vacío. Revisar respuesta/proxy/HTML.")
-    # Solo consultar más páginas si se alcanza el límite de 100 resultados.
+    # Comprobar siempre la paginación: el HTML puede contener menos de 100
+    # enlaces aunque el listado tenga más resultados (enlaces no reconocidos,
+    # fichas complementarias o cambios en el marcado de la sede).
     for page in range(2, 21):
-        if len(all_items) < 100:
-            break
         page_url = BASE + "?" + urlencode({**PARAMS, "pagina": str(page)})
         page_html, _ = fetch(page_url, timeout=25)
+        if is_service_unavailable_page(page_html):
+            raise RuntimeError(f"La sede devolvió un error al consultar la página {page} del listado.")
         items, _ = extract_result_links(page_html)
         fresh = [x for x in items if x["id_emp"] not in all_items]
         print(f"LISTADO_PAGINA={page} enlaces={len(items)} nuevos={len(fresh)}")
