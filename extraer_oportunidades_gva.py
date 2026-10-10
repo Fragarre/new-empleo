@@ -70,7 +70,10 @@ def normalize_match(value):
 def classify_scope(title, body_text="", link_text=""):
     """Devuelve (incluible, motivo) aplicando los filtros expresos del proyecto."""
     combined = normalize_match(" ".join((title, body_text, link_text)))
-    restricted_term = next((term for term in RESTRICTED if term in combined), None)
+    # Las exclusiones se buscan en el título identificativo y el texto del enlace,
+    # no en todo el cuerpo: las fichas pueden mencionar otros turnos como contexto.
+    identity = normalize_match(" ".join((title, link_text)))
+    restricted_term = next((term for term in RESTRICTED if term in identity), None)
     if restricted_term:
         return False, f"exclusion_explicita:{restricted_term}"
     has_target_group = bool(re.search(r"\b(?:A1-01|A2-01|C1-01|C2-01)\b", combined, re.I))
