@@ -181,6 +181,8 @@ def parse_detail(emp):
     m = re.search(r"(?:Código|Codi) GVA\s*(\d+)", text, re.I)
     if m:
         gva_code = m.group(1)
+    if not gva_code:
+        gva_code = emp["id_emp"]
     sia_code = ""
     m = re.search(r"(?:Código|Codi) SIA\s*(\d+)", text, re.I)
     if m:
@@ -197,9 +199,25 @@ def parse_detail(emp):
     for label, value in re.findall(r"(Libre general|Turno libre|Torn lliure|Promoción interna|Promoció interna|Discapacidad intelectual|Diversidad funcional|Discapacidad|Enfermedad mental)\s*:?\s*([\d.]+)", text, re.I):
         dist[label.lower()] = value.replace(".", "")
     stages_section = ""
-    m = re.search(r"(?:LISTADO DE ETAPAS|Llistat d'etapes)(.*?)(?:AYUDA|AJUDA|Preguntas frecuentes|Preguntes freqüents|Enlaces de interés|Enllaços d'interés|$)", text, re.I)
-    if m:
-        stages_section = clean(m.group(1))
+    # La etiqueta aparece también en la navegación lateral; tomar la última
+    # aparición para recuperar el bloque real del historial de etapas.
+    stage_labels = list(re.finditer(r"LISTADO DE ETAPAS|Llistat d'etapes", text, re.I))
+    if stage_labels:
+        start = stage_labels[-1].end()
+        tail = text[start:]
+        end_match = re.search(r"AYUDA|AJUDA|Preguntas frecuentes|Preguntes freqüents|Enlaces de interés|Enllaços d'interés", tail, re.I)
+        stages_section = clean(tail[:end_match.start()] if end_match else tail)
+    application_window = ""
+    application_start = ""
+    application_end = ""
+    application_match = re.search(
+        r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\\.licituds|Termini de sol\\.licitud)(.{0,500})",
+        stages_section or text, re.I)
+    if application_match:
+        application_window = clean(application_match.group(0))[:600]
+        app_dates = re.findall(r"\\b(\\d{2}[/-]\\d{2}[/-]\\d{4})\\b", application_window)
+        if len(app_dates) >= 2:
+            application_start, application_end = app_dates[0], app_dates[1]
     # Fecha de plazo de solicitud: el buscador puede mostrar una etapa intermedia; no se confunde con el plazo inicial.
     dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", text)
     norm = text.lower()
@@ -211,7 +229,7 @@ def parse_detail(emp):
         r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
         title, re.I))
     target = bool(group or administrative) and not restricted
-    terminal = any(x in current.lower() for x in TERMINAL)
+    terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     return {
@@ -228,7 +246,11 @@ def parse_detail(emp):
         "plazas_totales": places_total,
         "distribucion_plazas": dist,
         "fechas_detectadas": list(dict.fromkeys(dates)),
+        "plazo_solicitud_texto": application_window,
+        "plazo_solicitud_inicio": application_start,
+        "plazo_solicitud_fin": application_end,
         "etapas_completas_texto": stages_section,
+        "oportunidad_en_seguimiento": bool(target and status != "FINALIZADA_PROBABLE"),
         "estado_provisional": status,
         "requiere_revision": not bool(current and places_total and stages_section),
         "error": "",
@@ -298,8 +320,9 @@ def main():
     columns = ["id_emp", "url", "titulo", "codigo_gva", "codigo_sia", "grupo_objetivo",
                "administrativo_por_titulo", "candidata_por_criterios_basicos",
                "convocatoria_tipo_restringido_detectado", "etapa_actual", "plazas_totales",
-               "distribucion_plazas", "fechas_detectadas", "estado_provisional",
-               "requiere_revision", "etapas_completas_texto", "error"]
+               "distribucion_plazas", "fechas_detectadas", "plazo_solicitud_texto",
+               "plazo_solicitud_inicio", "plazo_solicitud_fin", "estado_provisional",
+               "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto", "error"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
         writer.writeheader()
