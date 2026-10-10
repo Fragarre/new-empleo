@@ -126,7 +126,7 @@ def extract_result_links(html):
     candidates = list(parser.links)
     # Respaldo por regex sobre el HTML original por si Liferay altera el marcado.
     candidates.extend((unescape(href), "") for href in re.findall(
-        r"""href=["']([^"']*detall-ocupacio-publica[^"']*id_emp=\d+[^"']*)["']""",
+        r"""href=["']([^"']*detall-ocupacio-publica[^"']*)["']""",
         html, re.I))
     for href, label in candidates:
         href = unescape(href)
