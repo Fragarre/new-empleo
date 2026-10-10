@@ -113,7 +113,7 @@ def main():
 
     for control in inspector.filter_controls:
         print(f"FILTER_CONTROL={control!r}")
-    for match in re.finditer(r"<input\\b[^>]*>", html, re.IGNORECASE):
+    for match in re.finditer(r"<input\b[^>]*>", html, re.IGNORECASE):
         tag = match.group(0)
         if any(word in tag.lower() for word in ("type-test", "flexradiodefault", "id=", "type=")):
             print("HTML_INPUT=" + tag[:500])
