@@ -460,6 +460,7 @@ def parse_detail(emp):
     }
 
 
+# La salida mantiene fechas UTC conscientes de zona horaria para auditoría.
 def main():
     OUT.mkdir(exist_ok=True)
     first_url = BASE + "?" + urlencode(PARAMS)
