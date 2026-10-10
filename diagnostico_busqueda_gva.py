@@ -135,6 +135,16 @@ def main():
                 employment_ids = list(dict.fromkeys(re.findall(r'id_emp=(\d+)', probe_html, re.I)))
                 print(f"PROBE_{label}_EMPLOYMENT_IDS_COUNT={len(employment_ids)}")
                 print(f"PROBE_{label}_EMPLOYMENT_IDS={employment_ids!r}")
+                # Inspección de enlaces dentro del bloque de resultados.
+                context_start = max(0, result_pos - 300) if result_pos >= 0 else 0
+                context_end = min(len(probe_html), result_pos + 30000) if result_pos >= 0 else min(len(probe_html), 30000)
+                results_html = probe_html[context_start:context_end]
+                links = re.findall(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', results_html, re.I | re.S)
+                print(f"PROBE_{label}_RESULT_LINK_COUNT={len(links)}")
+                for link_index, (href, link_text) in enumerate(links[:100], 1):
+                    visible_text = re.sub(r"<[^>]+>", " ", link_text)
+                    visible_text = re.sub(r"\s+", " ", visible_text).strip()
+                    print(f"PROBE_{label}_RESULT_LINK_{link_index}={href!r} | {visible_text[:220]!r}")
                 print(f"PROBE_{label}_RESULTS_CONTEXT=" + (probe_html[max(0, result_pos-300):result_pos+4500] if result_pos >= 0 else "NOT_FOUND"))
         except Exception as exc:
             print(f"PROBE_{label}_ERROR={type(exc).__name__}: {exc}")
