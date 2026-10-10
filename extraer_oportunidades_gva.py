@@ -201,15 +201,9 @@ def extract_latest_stage_date(stages_section):
     """Devuelve la fecha de publicación de la etapa actual del historial oficial."""
     if not stages_section:
         return ""
-    current_block = re.split(
-        r"(?<!Etapa actual\. )(?=\b(?:Bases y apertura de plazo|Nombramiento|Lista|Cuestionario|Acuerdo|Nota informativa|Anulación|Anulacion|Modificación|Modificacion|Adjudicación|Adjudicacion)\b)",
-        stages_section,
-        maxsplit=1,
-        flags=re.I,
-    )[0]
     match = re.search(
-        r"(?:Publicación|Publicacio)\\s+.{0,140}?\\b(\\d{2}/\\d{2}/\\d{4})",
-        current_block,
+        r"(?:Publicación|Publicacio)\s+.{0,140}?\b(\d{2}/\d{2}/\d{4})",
+        stages_section,
         re.I,
     )
     return match.group(1) if match else ""
