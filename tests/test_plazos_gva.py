@@ -24,7 +24,8 @@ class ApplicationWindowTests(unittest.TestCase):
         text = (
             "Apertura plazo 20/07/2026 Cierre plazo 31/07/2026 "
             "Fase Convocatoria Publicación DOGV de 08/07/2026 "
-            "FAQ Apertura plazo 09/07/2026 Cierre plazo 22/07/2026"
+            + ("texto auxiliar " * 30)
+            + "FAQ Apertura plazo 09/07/2026 Cierre plazo 22/07/2026"
         )
         pairs = list(PATTERN.finditer(text))
         preferred = list(PATTERN.finditer(text[:250]))
