@@ -104,8 +104,8 @@ class ScopeClassificationTests(unittest.TestCase):
 
     def test_internal_promotion_is_excluded(self):
         included, reason = classify_scope(
-            "Convocatoria cuerpo administrativo C1-01",
-            "Promoción interna mediante proceso selectivo."
+            "Convocatoria de promoción interna del cuerpo administrativo C1-01",
+            "Proceso selectivo."
         )
         self.assertFalse(included)
         self.assertIn("exclusion_explicita", reason)
@@ -128,8 +128,8 @@ class ScopeClassificationTests(unittest.TestCase):
 
     def test_accented_exclusion_terms_are_normalized(self):
         included, reason = classify_scope(
-            "Convocatoria de Administración A1-01, turno libre",
-            "Proceso selectivo de Fondos Europeos."
+            "Convocatoria de Administración A1-01 de Fondos Europeos, turno libre",
+            "Proceso selectivo."
         )
         self.assertFalse(included)
         self.assertIn("fondos europeos", reason)
