@@ -272,11 +272,11 @@ def parse_detail(emp):
             else:
                 stages_section = ficha_pdf_texto
             application_match = re.search(
-                r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\\.licituds|Termini de sol\\.licitud)(.{0,700})",
+                r"(?:Plazo de solicitud|Plazo de presentación de solicitudes|Presentación de solicitudes|Presentació de sol\.licituds|Termini de sol\.licitud)(.{0,700})",
                 ficha_pdf_texto, re.I)
             if application_match:
                 application_window = clean(application_match.group(0))[:800]
-                app_dates = re.findall(r"\\b(\\d{2}[/-]\\d{2}[/-]\\d{4})\\b", application_window)
+                app_dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", application_window)
                 if len(app_dates) >= 2:
                     application_start, application_end = app_dates[0], app_dates[1]
     terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
