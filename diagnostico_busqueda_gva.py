@@ -19,7 +19,7 @@ PROBE_PARAMS = {
     "pruebas": "533",
     "convocatorias": "507",
     "turnos": "L",
-    "tipoOrganismo": "flexRadioDefault200",
+    "tipoOrganismo": "GVA",
     "fechaPublicacionDesde": "2025-10-10",
     "fechaPublicacionHasta": "2026-10-10",
     "tamanyoPagina": "30",
