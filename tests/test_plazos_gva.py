@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from extraer_oportunidades_gva import is_service_unavailable_page, select_application_pair
+from extraer_oportunidades_gva import classify_scope, is_service_unavailable_page, select_application_pair
 
 
 PATTERN = re.compile(
@@ -83,6 +83,56 @@ class ApplicationWindowTests(unittest.TestCase):
             "Apertura plazo 31/07/2026 Cierre plazo 20/07/2026"
         ))
         self.assertIsNone(select_application_pair("08/07/2026", pairs))
+
+
+class ScopeClassificationTests(unittest.TestCase):
+    def test_general_administration_turno_libre_oposicion_is_in_scope(self):
+        included, reason = classify_scope(
+            "Convocatoria de acceso al cuerpo Superior de Administración A1-01. TURNO LIBRE",
+            "Pruebas selectivas de acceso por oposición."
+        )
+        self.assertTrue(included)
+        self.assertEqual(reason, "alcance_confirmado")
+
+    def test_european_funds_specialty_is_excluded_even_with_target_group(self):
+        included, reason = classify_scope(
+            "Convocatoria APT-A1-01-02 de Fondos Europeos. TURNO LIBRE",
+            "Pruebas selectivas de acceso A1-01 por oposición."
+        )
+        self.assertFalse(included)
+        self.assertIn("exclusion_explicita", reason)
+
+    def test_internal_promotion_is_excluded(self):
+        included, reason = classify_scope(
+            "Convocatoria cuerpo administrativo C1-01",
+            "Promoción interna mediante proceso selectivo."
+        )
+        self.assertFalse(included)
+        self.assertIn("exclusion_explicita", reason)
+
+    def test_missing_turno_libre_evidence_is_excluded(self):
+        included, reason = classify_scope(
+            "Convocatoria cuerpo administrativo C1-01",
+            "Pruebas selectivas por oposición."
+        )
+        self.assertFalse(included)
+        self.assertEqual(reason, "sin_evidencia_turno_libre")
+
+    def test_non_target_group_is_excluded(self):
+        included, reason = classify_scope(
+            "Convocatoria cuerpo de bomberos B1",
+            "Turno libre por oposición."
+        )
+        self.assertFalse(included)
+        self.assertIn("exclusion_explicita", reason)
+
+    def test_accented_exclusion_terms_are_normalized(self):
+        included, reason = classify_scope(
+            "Convocatoria de Administración A1-01, turno libre",
+            "Proceso selectivo de Fondos Europeos."
+        )
+        self.assertFalse(included)
+        self.assertIn("fondos europeos", reason)
 
 
 if __name__ == "__main__":
