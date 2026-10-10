@@ -197,6 +197,24 @@ def select_application_pair(publication_text, date_pairs, preferred_pairs=None):
     return min(candidates, key=lambda item: item[0])[1] if candidates else None
 
 
+def extract_latest_stage_date(stages_section):
+    """Devuelve la fecha de publicación de la etapa actual del historial oficial."""
+    if not stages_section:
+        return ""
+    current_block = re.split(
+        r"(?<!Etapa actual\. )(?=\b(?:Bases y apertura de plazo|Nombramiento|Lista|Cuestionario|Acuerdo|Nota informativa|Anulación|Anulacion|Modificación|Modificacion|Adjudicación|Adjudicacion)\b)",
+        stages_section,
+        maxsplit=1,
+        flags=re.I,
+    )[0]
+    match = re.search(
+        r"(?:Publicación|Publicacio)\\s+.{0,140}?\\b(\\d{2}/\\d{2}/\\d{4})",
+        current_block,
+        re.I,
+    )
+    return match.group(1) if match else ""
+
+
 def is_terminal_stage(current):
     current_normalized = (current or "").lower()
     stage_annuls_only_an_act = "anulación acto" in current_normalized or "anulacion acto" in current_normalized
@@ -418,7 +436,7 @@ def parse_detail(emp):
                         application_window = clean(term_match.group(0))[:800]
                     else:
                         application_window = clean(base_tail[:800])
-    terminal = is_terminal_stage(current)
+    fecha_ultima_etapa = extract_latest_stage_date(stages_section)\n    terminal = is_terminal_stage(current)
     # Si ya hay un resultado publicado, la oportunidad deja de ser activa según el criterio del proyecto.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     en_plazo_inscripcion = None
@@ -444,7 +462,7 @@ def parse_detail(emp):
         "etapa_actual": current,
         "plazas_totales": places_total,
         "distribucion_plazas": dist,
-        "fecha_publicacion": fecha_publicacion,
+        "fecha_publicacion": fecha_publicacion,\n        "fecha_ultima_etapa": fecha_ultima_etapa,
         "fechas_detectadas": list(dict.fromkeys(dates)),
         "plazo_solicitud_texto": application_window,
         "plazo_solicitud_inicio": application_start,
@@ -533,7 +551,7 @@ def main():
                "convocatoria_tipo_restringido_detectado", "motivo_clasificacion_alcance", "etapa_actual", "plazas_totales",
                "distribucion_plazas", "fecha_publicacion", "fechas_detectadas", "plazo_solicitud_texto",
                "plazo_solicitud_inicio", "plazo_solicitud_fin", "en_plazo_inscripcion",
-               "estado_provisional", "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
+               "fecha_ultima_etapa", "estado_provisional", "oportunidad_en_seguimiento", "requiere_revision", "etapas_completas_texto",
                "ficha_pdf_url", "ficha_completa_texto", "error_pdf", "error"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
