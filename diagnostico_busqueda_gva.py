@@ -145,12 +145,12 @@ def main():
                                 detail_body = detail_response.read()
                                 detail_charset = detail_response.headers.get_content_charset() or "utf-8"
                                 detail_html = detail_body.decode(detail_charset, errors="replace")
-                            detail_html = re.sub(r"<(script|style)\\b[^>]*>.*?</\\1>", " ", detail_html, flags=re.I | re.S)
+                            detail_html = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", " ", detail_html, flags=re.I | re.S)
                             detail_text = html_unescape(re.sub(r"<[^>]+>", " ", detail_html))
-                            detail_text = re.sub(r"\\s+", " ", detail_text).strip()
-                            title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", detail_html, re.I | re.S)
+                            detail_text = re.sub(r"\s+", " ", detail_text).strip()
+                            title_match = re.search(r"<title\b[^>]*>(.*?)</title>", detail_html, re.I | re.S)
                             detail_title = html_unescape(re.sub(r"<[^>]+>", " ", title_match.group(1))).strip() if title_match else ""
-                            stage_match = re.search(r"Etapa actual\\s*:?\\s*(.{1,180}?)(?=\\s+(?:Código SIA|Código GVA|Información básica|Listado de etapas|Fase)\\b)", detail_text, re.I)
+                            stage_match = re.search(r"Etapa actual\s*:?\s*(.{1,180}?)(?=\s+(?:Código SIA|Código GVA|Información básica|Listado de etapas|Fase)\b)", detail_text, re.I)
                             current_stage = stage_match.group(1).strip() if stage_match else "NO_EXTRAIDA"
                             stages_match = re.search(r"Listado de etapas(.{0,1800}?)(?=Preguntas frecuentes|Enlaces de interés|$)", detail_text, re.I)
                             stages_text = stages_match.group(1).strip() if stages_match else "NO_EXTRAIDO"
