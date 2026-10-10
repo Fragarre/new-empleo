@@ -143,10 +143,15 @@ def extract_result_links(html):
 
 def parse_detail(emp):
     html, final_url = fetch(emp["url"], timeout=10)
-    p = PageParser()
-    p.feed(html)
-    text = p.text
-    title = p.title
+    # Para la ficha usamos el HTML visible, quitando script/style antes de
+    # eliminar etiquetas. El parser de enlaces no siempre recorre bien el DOM
+    # dinámico de Liferay hasta el bloque final de etapas.
+    visible_html = re.sub(r"<(script|style|noscript)\\b[^>]*>.*?</\\1>", " ", html, flags=re.I | re.S)
+    text = clean(html_unescape(re.sub(r"<[^>]+>", " ", visible_html)))
+    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    title = clean(html_unescape(re.sub(r"<[^>]+>", " ", title_match.group(1)))) if title_match else ""
+    heading_match = re.search(r"<h1\\b[^>]*>(.*?)</h1>", visible_html, re.I | re.S)
+    record_title = clean(html_unescape(re.sub(r"<[^>]+>", " ", heading_match.group(1)))) if heading_match else ""
     # Extrae texto tras etiquetas conocidas sin depender de un diseño CSS concreto.
     def after(label, max_len=500):
         m = re.search(re.escape(label) + r"\s*[:：]?\s*(.{1," + str(max_len) + r"}?)(?=\s+(?:Código SIA|Codi SIA|Código GVA|Codi GVA|INFORMACIÓN BÁSICA|INFORMACIÓ BÀSICA|LISTADO DE ETAPAS|Llistat d'etapes|AYUDA|AJUDA)\b|$)", text, re.I)
@@ -161,7 +166,7 @@ def parse_detail(emp):
         if m:
             body_title = clean(m.group(1))
             break
-    title = body_title or title
+    title = record_title or body_title or title
     gva_code = ""
     m = re.search(r"(?:Código|Codi) GVA\s*(\d+)", text, re.I)
     if m:
