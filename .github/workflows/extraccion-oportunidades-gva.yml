@@ -8,6 +8,7 @@ on:
     paths:
       - "extraer_oportunidades_gva.py"
       - "decodo_proxy.py"
+      - "tests/**"
       - ".github/workflows/extraccion-oportunidades-gva.yml"
 
 permissions:
