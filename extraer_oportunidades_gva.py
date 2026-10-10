@@ -42,6 +42,8 @@ TERMINAL = (
     "resolución de nombramiento", "resolucion de nombramiento",
     "finalización del proceso selectivo", "finalizacion del proceso selectivo",
     "proceso selectivo finalizado", "aprobación del expediente", "aprobacion del expediente",
+    "lista de aprobados", "llista d'aprovats", "relación definitiva de personas aprobadas",
+    "relacion definitiva de personas aprobadas", "resultado definitivo del proceso selectivo",
 )
 RESTRICTED = ("promoción interna", "promocion interna", "libre designación", "libre designacion",
               "acto único telemático", "acto unico telematico", "anuncio difícil cobertura",
@@ -150,6 +152,17 @@ def select_application_pair(publication_text, date_pairs, preferred_pairs=None):
         if 0 <= day_gap <= 30 and closing_date >= opening_date:
             candidates.append((abs(day_gap - 1), candidate_pair))
     return min(candidates, key=lambda item: item[0])[1] if candidates else None
+
+
+def is_terminal_stage(current):
+    current_normalized = (current or "").lower()
+    stage_annuls_only_an_act = "anulación acto" in current_normalized or "anulacion acto" in current_normalized
+    terminal = (
+        any(x in current_normalized for x in TERMINAL)
+        or "adjudicación de destinos y fecha de cese/toma de posesión" in current_normalized
+        or "adjudicacion de destinos y fecha de cese/toma de posesion" in current_normalized
+    )
+    return terminal and not stage_annuls_only_an_act
 
 
 def fetch_official_pdf(emp_id):
@@ -336,8 +349,8 @@ def parse_detail(emp):
                         application_window = clean(term_match.group(0))[:800]
                     else:
                         application_window = clean(base_tail[:800])
-    terminal = any(x in current.lower() for x in TERMINAL) or "adjudicación de destinos y fecha de cese/toma de posesión" in current.lower() or "adjudicacion de destinos y fecha de cese/toma de posesion" in current.lower()
-    # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
+    terminal = is_terminal_stage(current)
+    # Si ya hay un resultado publicado, la oportunidad deja de ser activa según el criterio del proyecto.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     en_plazo_inscripcion = None
     if application_start and application_end:
