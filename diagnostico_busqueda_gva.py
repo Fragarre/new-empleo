@@ -21,8 +21,6 @@ PROBE_PARAMS = {
     "tipoOrganismo": "flexRadioDefault200",
     "fechaPublicacionDesde": "2025-10-10",
     "fechaPublicacionHasta": "2026-10-10",
-    "fechaPublicacionBoletinDesde": "2025-10-10",
-    "fechaPublicacionBoletinHasta": "2026-10-10",
     "tamanyoPagina": "30",
 }
 
