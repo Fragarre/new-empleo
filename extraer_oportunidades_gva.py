@@ -194,9 +194,12 @@ def parse_detail(emp):
     dates = re.findall(r"\b(\d{2}[/-]\d{2}[/-]\d{4})\b", text)
     norm = text.lower()
     restricted = any(x in (title + " " + emp.get("link_text", "")).lower() for x in RESTRICTED)
-    group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", text, re.I)
+    group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", title, re.I)
     group = group_match.group(1).upper() if group_match else ""
-    administrative = bool(re.search(r"administrativ[oa]|auxiliar administrativo|cuerpo superior de administración|cos superior d'administració", norm, re.I))
+    administrative = bool(re.search(
+        r"\b(?:cuerpo|escala|agrupación|agrupacion)\s+administrativ[oa]s?\b|"
+        r"\bauxiliar(?:es)? administrativ[oa]s?\b|\bcuerpo administrativo\b",
+        title, re.I))
     target = bool(group or administrative) and not restricted
     terminal = any(x in current.lower() for x in TERMINAL)
     # No se afirma que el proceso esté activo si la etapa no se ha podido extraer.
