@@ -135,5 +135,14 @@ class ScopeClassificationTests(unittest.TestCase):
         self.assertIn("fondos europeos", reason)
 
 
+    def test_concurso_oposicion_is_excluded_as_a_different_selection_system(self):
+        included, reason = classify_scope(
+            "Convocatoria cuerpo administrativo C1-01, turno libre, concurso-oposición",
+            "Proceso selectivo."
+        )
+        self.assertFalse(included)
+        self.assertIn("exclusion_explicita", reason)
+
+
 if __name__ == "__main__":
     unittest.main()

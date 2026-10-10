@@ -57,7 +57,8 @@ RESTRICTED = (
     "personal estatutario", "sanidad", "educacion", "policia", "bomberos",
     "bolsa de empleo", "bolsa de trabajo", "formacion de bolsa",
     "libre nombramiento", "comision de servicios", "concurso de traslados",
-    "concurso general", "concurso especifico",
+    "concurso general", "concurso especifico", "concurso-oposicion", "concurso oposicion",
+    "sistema de concurso", "sistema de meritos",
 )
 
 
