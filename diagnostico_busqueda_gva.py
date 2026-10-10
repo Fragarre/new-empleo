@@ -109,8 +109,10 @@ def main():
     from urllib.parse import urlencode
     probes = [
         ("BASE_FILTERS", PROBE_PARAMS),
-        ("BASE_NO_PROP_DATES", {k:v for k,v in PROBE_PARAMS.items() if not k.startswith("fechaPublicacionBoletin")}),
-        ("BASE_NO_DATES", {k:v for k,v in PROBE_PARAMS.items() if not k.startswith("fechaPublicacion")}),
+        ("PAGE_1", {**PROBE_PARAMS, "pagina": "1"}),
+        ("PAGE_2", {**PROBE_PARAMS, "pagina": "2"}),
+        ("PAGE_3", {**PROBE_PARAMS, "pagina": "3"}),
+        ("PAGE_4", {**PROBE_PARAMS, "pagina": "4"}),
     ]
     for label, params in probes:
         probe_url = URL + "?" + urlencode(params)
@@ -123,6 +125,9 @@ def main():
                 print(f"PROBE_{label}_URL={probe_response.geturl()}")
                 print(f"PROBE_{label}_BYTES={len(probe_body)}")
                 print(f"PROBE_{label}_TITLE_COUNT={len(re.findall(r'<title\\b', probe_html, re.I))}")
+                total_match = re.search(r'class=["\'][^"\']*total-results[^"\']*["\'][^>]*>(.*?)</div>', probe_html, re.I | re.S)
+                total_text = re.sub(r"<[^>]+>", " ", total_match.group(1)) if total_match else ""
+                print(f"PROBE_{label}_TOTAL_RESULTS_TEXT={re.sub(r'\s+', ' ', total_text).strip()!r}")
                 print(f"PROBE_{label}_ITEM_MARKERS={sum(probe_html.lower().count(x) for x in ('convocatoria', 'proceso selectivo', 'fecha de publicación'))}")
                 result_pos = probe_html.lower().find('results mt-3')
                 detail_hrefs = [h for h in re.findall('href="([^"]+)"', probe_html, re.I) if 'ocupacio-publica' in h.lower() or 'ocupacio_publica' in h.lower()]
