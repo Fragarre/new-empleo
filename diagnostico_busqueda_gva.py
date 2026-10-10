@@ -154,11 +154,24 @@ def main():
                             current_stage = stage_match.group(1).strip() if stage_match else "NO_EXTRAIDA"
                             stages_match = re.search(r"Listado de etapas(.{0,1800}?)(?=Preguntas frecuentes|Enlaces de interés|$)", detail_text, re.I)
                             stages_text = stages_match.group(1).strip() if stages_match else "NO_EXTRAIDO"
-                            result_terms = ("lista de aprobados", "personas aprobadas", "resultado del ejercicio", "resultados del ejercicio", "calificaciones", "nota final", "propuesta de nombramiento", "nombramiento")
-                            result_hits = [term for term in result_terms if term in stages_text.lower()]
+                            result_terms = (
+                                "lista de aprobados", "lista definitiva de aprobados",
+                                "relación de personas que han superado", "personas que han superado",
+                                "resultado final", "propuesta de nombramiento", "nombramiento",
+                                "adjudicación de destinos", "aprobación del expediente",
+                            )
+                            current_lower = current_stage.lower()
+                            result_hits = [term for term in result_terms if term in current_lower]
+                            if current_stage == "NO_EXTRAIDA":
+                                audit_status = "REVISION_MANUAL_ETAPA_NO_EXTRAIDA"
+                            elif result_hits:
+                                audit_status = "RESULTADOS_O_FASE_FINAL_PUBLICADA"
+                            else:
+                                audit_status = "SIN_INDICADOR_DE_RESULTADOS_EN_ETAPA_ACTUAL"
                             print(f"DETAIL_AUDIT_{detail_index}_URL={detail_url}")
                             print(f"DETAIL_AUDIT_{detail_index}_TITLE={detail_title[:260]!r}")
                             print(f"DETAIL_AUDIT_{detail_index}_CURRENT_STAGE={current_stage!r}")
+                            print(f"DETAIL_AUDIT_{detail_index}_AUDIT_STATUS={audit_status}")
                             print(f"DETAIL_AUDIT_{detail_index}_RESULT_INDICATORS={result_hits!r}")
                             print(f"DETAIL_AUDIT_{detail_index}_STAGES={stages_text[:1000]!r}")
                         except Exception as detail_exc:
