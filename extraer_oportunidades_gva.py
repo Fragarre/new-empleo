@@ -189,6 +189,20 @@ def fetch_official_pdf(emp_id):
         return url, "", f"{type(exc).__name__}: {exc}"
 
 
+def is_service_unavailable_page(html, title=""):
+    """Detecta páginas de error de la sede antes de tratar sus enlaces como fichas."""
+    title_text = clean(title).lower()
+    parser = PageParser()
+    parser.feed(html or "")
+    body_text = parser.text.lower()
+    signals = (
+        "aplicación fuera de servicio", "aplicacion fuera de servicio",
+        "servicio temporalmente no disponible", "service unavailable",
+        "temporarily unavailable",
+    )
+    return any(signal in title_text or signal in body_text for signal in signals)
+
+
 def extract_result_links(html):
     parser = PageParser()
     parser.feed(html)
@@ -403,8 +417,14 @@ def main():
             first.append({"id_emp": supplemental_id, "url": f"https://sede.gva.es/es/detall-ocupacio-publica?id_emp={supplemental_id}", "link_text": "Ficha complementaria identificada en auditoría"})
     print(f"LISTADO_URL_FINAL={final_list_url}")
     print(f"LISTADO_HTML_CARACTERES={len(html)}")
-    title_match = re.search(r"<title\b[^>]*>(.*?)</title>", html, re.I | re.S)
-    print(f"LISTADO_TITULO={clean(re.sub(r'<[^>]+>', ' ', title_match.group(1))) if title_match else ''!r}")
+    title_match = re.search(r"<title\\b[^>]*>(.*?)</title>", html, re.I | re.S)
+    list_title = clean(re.sub(r'<[^>]+>', ' ', title_match.group(1))) if title_match else ""
+    print(f"LISTADO_TITULO={list_title!r}")
+    if is_service_unavailable_page(html, list_title):
+        raise RuntimeError(
+            "La sede GVA devolvió una página de servicio no disponible; "
+            "se aborta para evitar publicar una extracción falsa."
+        )
     print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
     if not all_items:
