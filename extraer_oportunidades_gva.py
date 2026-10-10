@@ -430,7 +430,8 @@ def parse_detail(emp):
                         application_window = clean(term_match.group(0))[:800]
                     else:
                         application_window = clean(base_tail[:800])
-    fecha_ultima_etapa = extract_latest_stage_date(stages_section)\n    terminal = is_terminal_stage(current)
+    fecha_ultima_etapa = extract_latest_stage_date(stages_section)
+    terminal = is_terminal_stage(current)
     # Si ya hay un resultado publicado, la oportunidad deja de ser activa según el criterio del proyecto.
     status = "FINALIZADA_PROBABLE" if terminal else ("EN_SEGUIMIENTO" if current else "REVISAR_ETAPA")
     en_plazo_inscripcion = None
@@ -456,7 +457,8 @@ def parse_detail(emp):
         "etapa_actual": current,
         "plazas_totales": places_total,
         "distribucion_plazas": dist,
-        "fecha_publicacion": fecha_publicacion,\n        "fecha_ultima_etapa": fecha_ultima_etapa,
+        "fecha_publicacion": fecha_publicacion,
+        "fecha_ultima_etapa": fecha_ultima_etapa,
         "fechas_detectadas": list(dict.fromkeys(dates)),
         "plazo_solicitud_texto": application_window,
         "plazo_solicitud_inicio": application_start,
