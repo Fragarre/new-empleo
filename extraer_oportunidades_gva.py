@@ -12,7 +12,8 @@ import sys
 import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from html import unescape, unescape as html_unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -23,13 +24,22 @@ from decodo_proxy import open_via_decodo
 
 BASE = "https://sede.gva.es/es/cercador-ocupacio-publica"
 DETAIL_RE = re.compile(r"/es/detall-ocupacio-publica\?[^#]*\bid_emp=(\d+)", re.I)
+def gva_date_window(today=None):
+    """Ventana móvil de un año usando la fecha local de la Comunitat Valenciana."""
+    if today is None:
+        today = datetime.now(ZoneInfo("Europe/Madrid")).date()
+    return {
+        "fechaPublicacionDesde": (today - timedelta(days=365)).isoformat(),
+        "fechaPublicacionHasta": today.isoformat(),
+    }
+
+
 PARAMS = {
     "pruebas": "533",
     "convocatorias": "507",
     "turnos": "L",
     "tipoOrganismo": "GVA",
-    "fechaPublicacionDesde": "2025-10-10",
-    "fechaPublicacionHasta": "2026-10-10",
+    **gva_date_window(),
     "tamanyoPagina": "100",
 }
 # Ficha oficial detectada previamente como ausente en el listado filtrado.
