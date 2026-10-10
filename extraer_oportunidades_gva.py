@@ -144,7 +144,7 @@ def parse_detail(emp):
     title = p.title
     # Extrae texto tras etiquetas conocidas sin depender de un diseño CSS concreto.
     def after(label, max_len=500):
-        m = re.search(re.escape(label) + r"\s*[:：]?\s*(.{1," + str(max_len) + r"?)(?=\s+(?:Código SIA|Codi SIA|Código GVA|Codi GVA|INFORMACIÓN BÁSICA|INFORMACIÓ BÀSICA|LISTADO DE ETAPAS|Llistat d'etapes|AYUDA|AJUDA)\b|$)", text, re.I)
+        m = re.search(re.escape(label) + r"\s*[:：]?\s*(.{1," + str(max_len) + r"}?)(?=\s+(?:Código SIA|Codi SIA|Código GVA|Codi GVA|INFORMACIÓN BÁSICA|INFORMACIÓ BÀSICA|LISTADO DE ETAPAS|Llistat d'etapes|AYUDA|AJUDA)\b|$)", text, re.I)
         return clean(m.group(1)) if m else ""
 
     current = after("Etapa actual", 300) or after("Etapa actual", 300)
