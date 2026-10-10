@@ -113,8 +113,11 @@ def main():
 
     for control in inspector.filter_controls:
         print(f"FILTER_CONTROL={control!r}")
-    for marker in ("cards", "paginacion", "more-results", "results-number", "resultados"):
-        print(f"HTML_MARKER_{marker}={html.lower().count(marker)}")
+    for marker in ("type-test-list", "shifts-list", "type-organism-list", "processing-status-list", "groups-list", "paginacion", "resultados", "pagination"):
+        pos = html.lower().find(marker)
+        print(f"HTML_MARKER_{marker}_COUNT={html.lower().count(marker)}")
+        if pos >= 0:
+            print(f"HTML_CONTEXT_{marker}=" + re.sub(r"\\s+", " ", html[max(0, pos-700):pos+1800]))
 
     relevant_scripts = [
         url for url in inspector.scripts
