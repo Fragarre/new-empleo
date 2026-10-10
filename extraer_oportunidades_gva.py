@@ -11,7 +11,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from html import unescape
+from html import unescape, unescape as html_unescape
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlencode, urljoin, urlparse, parse_qs
@@ -166,7 +166,17 @@ def parse_detail(emp):
         if m:
             body_title = clean(m.group(1))
             break
-    title = record_title or body_title or title
+    # Preferir el título de la convocatoria visible en el cuerpo de la ficha,
+    # ya que el H1 puede ser solo el rótulo genérico "Detalle empleo público".
+    conv_title_match = re.search(
+        r"\\b(Convocatoria\\s+\\d+\\s*/\\s*\\d+.*?)(?=\\s+(?:Conselleria|Organismo|Organisme)\\b)",
+        text, re.I)
+    if conv_title_match:
+        title = clean(conv_title_match.group(1))
+    elif record_title and record_title.lower() not in ("detalle empleo público", "detall ocupació pública", "detalle", "detall"):
+        title = record_title
+    else:
+        title = body_title or title
     gva_code = ""
     m = re.search(r"(?:Código|Codi) GVA\s*(\d+)", text, re.I)
     if m:
