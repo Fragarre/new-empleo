@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Obtener repositorio
         uses: actions/checkout@v4
+      - name: Instalar lector de PDF
+        run: pip install pypdf
       - name: Validar sintaxis
         run: python -m py_compile extraer_oportunidades_gva.py decodo_proxy.py
       - name: Extraer fichas oficiales
