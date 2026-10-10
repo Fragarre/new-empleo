@@ -20,6 +20,19 @@ class ApplicationWindowTests(unittest.TestCase):
         self.assertEqual(selected.group(1), "20/07/2026")
         self.assertEqual(selected.group(2), "31/07/2026")
 
+    def test_base_window_beats_a_misleading_footer_window(self):
+        text = (
+            "Apertura plazo 20/07/2026 Cierre plazo 31/07/2026 "
+            "Fase Convocatoria Publicación DOGV de 08/07/2026 "
+            "FAQ Apertura plazo 09/07/2026 Cierre plazo 22/07/2026"
+        )
+        pairs = list(PATTERN.finditer(text))
+        preferred = list(PATTERN.finditer(text[:250]))
+        selected = select_application_pair("08/07/2026", pairs, preferred)
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected.group(1), "20/07/2026")
+        self.assertEqual(selected.group(2), "31/07/2026")
+
     def test_window_more_than_30_days_after_publication_is_not_guessed(self):
         pairs = list(PATTERN.finditer(
             "Apertura plazo 25/08/2026 Cierre plazo 14/09/2026"
