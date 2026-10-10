@@ -1,0 +1,101 @@
+"""Diagnóstico de solo lectura del formulario oficial de búsqueda GVA.
+
+Consulta la página pública a través de Decodo y muestra los nombres reales de
+campos, formularios y scripts encontrados. No busca convocatorias ni escribe
+en Supabase. No presupone nombres de parámetros.
+"""
+from html.parser import HTMLParser
+from urllib.parse import urljoin
+
+from decodo_proxy import open_via_decodo
+
+URL = "https://sede.gva.es/es/cercador-ocupacio-publica"
+
+
+class FormInspector(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.forms = []
+        self.scripts = []
+        self._form = None
+        self._select = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "form":
+            self._form = {
+                "action": attrs.get("action", ""),
+                "method": attrs.get("method", "get").upper(),
+                "fields": [],
+            }
+            self.forms.append(self._form)
+        elif tag in ("input", "button", "textarea") and self._form is not None:
+            self._form["fields"].append({
+                "tag": tag,
+                "type": attrs.get("type", ""),
+                "name": attrs.get("name", ""),
+                "id": attrs.get("id", ""),
+                "value": attrs.get("value", ""),
+            })
+        elif tag == "select" and self._form is not None:
+            self._select = {
+                "tag": "select",
+                "name": attrs.get("name", ""),
+                "id": attrs.get("id", ""),
+                "options": [],
+            }
+            self._form["fields"].append(self._select)
+        elif tag == "option" and self._select is not None:
+            self._select["options"].append({
+                "value": attrs.get("value", ""),
+                "selected": "selected" in attrs,
+            })
+        elif tag == "script" and attrs.get("src"):
+            self.scripts.append(urljoin(URL, attrs["src"]))
+
+    def handle_endtag(self, tag):
+        if tag == "select":
+            self._select = None
+        elif tag == "form":
+            self._form = None
+
+
+def main():
+    with open_via_decodo(URL, timeout=45) as response:
+        body = response.read()
+        charset = response.headers.get_content_charset() or "utf-8"
+        html = body.decode(charset, errors="replace")
+        print(f"HTTP_STATUS={response.status}")
+        print(f"FINAL_URL={response.geturl()}")
+        print(f"CONTENT_TYPE={response.headers.get('Content-Type', '')}")
+
+    inspector = FormInspector()
+    inspector.feed(html)
+    print(f"FORM_COUNT={len(inspector.forms)}")
+    for index, form in enumerate(inspector.forms, 1):
+        print(f"FORM_{index}_ACTION={form['action']}")
+        print(f"FORM_{index}_METHOD={form['method']}")
+        for field in form["fields"]:
+            if field["tag"] == "select":
+                print(
+                    f"SELECT name={field['name']!r} id={field['id']!r} "
+                    f"options={field['options']!r}"
+                )
+            else:
+                print(
+                    f"FIELD tag={field['tag']} type={field['type']!r} "
+                    f"name={field['name']!r} id={field['id']!r} "
+                    f"value={field['value']!r}"
+                )
+
+    relevant_scripts = [
+        url for url in inspector.scripts
+        if any(word in url.lower() for word in ("siac", "empleo", "buscador"))
+    ]
+    print(f"RELEVANT_SCRIPT_COUNT={len(relevant_scripts)}")
+    for url in relevant_scripts:
+        print(f"SCRIPT_URL={url}")
+
+
+if __name__ == "__main__":
+    main()
