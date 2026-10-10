@@ -360,7 +360,7 @@ def parse_detail(emp):
     body_main = text[body_start:body_start + 6000] if body_start >= 0 else text[:6000]
     classification_text = title + " " + body_main[:6000]
     in_scope, scope_reason = classify_scope(
-        title, body_main[:6000] + " " + ficha_pdf_texto, emp.get("link_text", "")
+        title, text, emp.get("link_text", "")
     )
     restricted = not in_scope
     group_match = re.search(r"\b(A1-01|A2-01|C1-01|C2-01)\b", normalize_match(classification_text), re.I)
