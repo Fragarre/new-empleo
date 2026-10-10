@@ -482,6 +482,15 @@ def main():
             "La sede GVA devolvió una página de servicio no disponible; "
             "se aborta para evitar publicar una extracción falsa."
         )
+    nav_parser = PageParser()
+    nav_parser.feed(html)
+    pagination_links = [
+        {"href": href, "label": label}
+        for href, label in nav_parser.links
+        if re.search(r"(?:pagina|page|cur|delta|pagination|_spage|p_p_state)", href, re.I)
+        or re.search(r"(?:siguiente|next|\u203a|\u00bb)", label, re.I)
+    ]
+    print(f"LISTADO_ENLACES_PAGINACION={json.dumps(pagination_links[:40], ensure_ascii=False)}")
     print(f"LISTADO_ENLACES_FICHA_INICIALES={len(first)}")
     all_items = {x["id_emp"]: x for x in first}
     if not all_items:
